@@ -1,9 +1,12 @@
 "use client"
 
 import Image from "next/image";
+
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import Link from "next/link";
+
 
 interface AuthProps{
     children: React.ReactNode;
