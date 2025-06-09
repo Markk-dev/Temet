@@ -36,6 +36,7 @@ export const SessionMiddleware = createMiddleware<Context>(
         if(!session){
             return c.json({error: "Unauthorized"}, 401);
         }
+        
         client.setSession(session);
         
         const account = new Account(client);
