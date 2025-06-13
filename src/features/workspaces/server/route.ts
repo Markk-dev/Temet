@@ -1,18 +1,40 @@
 import { Hono } from 'hono';
-import { ID, Role } from 'node-appwrite';
+import { ID, Query,  } from 'node-appwrite';
 import { zValidator } from '@hono/zod-validator';
 import { getFileViewUrl } from '@/lib/utils'; 
 
-import { DATABASE_ID, WORKSPACES_ID, IMAGES_BUCKET_ID, PROJECT_ENDPOINT, APPWRITE_PROJECT } from '@/config';
+import { MemberRole } from '@/features/members/types';
+
+import { DATABASE_ID, WORKSPACES_ID, IMAGES_BUCKET_ID, PROJECT_ENDPOINT, APPWRITE_PROJECT, MEMBERS_ID } from '@/config';
 import { SessionMiddleware } from '@/lib/session-middleware';
 import { createWorkspacesSchema } from '../schemas';
 
-const app = new Hono().post(
+const app = new Hono()
+  .get("/", SessionMiddleware, async (c) => {
+    
+      const user = c.get('user');
+      const databases = c.get('databases');
+      
+      //To check all members 
+      const members = await databases.listDocuments(
+        DATABASE_ID,
+        MEMBERS_ID,
+        [Query.equal('userId', user.$id)]
+      );
+
+      const workspaces = await databases.listDocuments(
+        DATABASE_ID,
+        WORKSPACES_ID,
+      );
+
+      return c.json({ data: workspaces });
+  })
+  .post(
   '/',
   zValidator('form', createWorkspacesSchema),
   SessionMiddleware,
   async (c) => {
-    const database = c.get('databases');
+    const databases = c.get('databases');
     const storage = c.get('storage');
     const user = c.get('user');
     const { name, image } = c.req.valid('form');
@@ -34,7 +56,7 @@ const app = new Hono().post(
       uploadedImageUrl = getFileViewUrl(file.$id);
     }
 
-    const workspace = await database.createDocument(
+    const workspace = await databases.createDocument(
       DATABASE_ID,
       WORKSPACES_ID,
       ID.unique(),
@@ -45,6 +67,16 @@ const app = new Hono().post(
       }
     );
 
+    await databases.createDocument(
+      DATABASE_ID,
+      MEMBERS_ID,
+      ID.unique(),
+      {
+        userId: user.$id,
+        workspaceId: workspace.$id,
+        role: MemberRole.ADMIN,
+      }
+    )
     return c.json(workspace);
   }
 );
