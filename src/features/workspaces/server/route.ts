@@ -40,31 +40,36 @@ const app = new Hono()
       return c.json({ data: workspaces });
   })
   .post(
-  '/',
-  zValidator('form', createWorkspacesSchema),
-  SessionMiddleware,
-  async (c) => {
-    const databases = c.get('databases');
-    const storage = c.get('storage');
-    const user = c.get('user');
-    const { name, image } = c.req.valid('form');
+    '/',
+    zValidator("form", createWorkspacesSchema),
+    SessionMiddleware,
+    async (c) => {
+      const databases = c.get("databases");
+      const storage = c.get("storage");
+      const user = c.get("user");
 
-    let uploadedImageUrl: string | undefined;
+      const { name, image } = c.req.valid("form");
 
-    if (image instanceof File) {
-      const file = await storage.createFile(IMAGES_BUCKET_ID, ID.unique(), image);
+      let uploadedImageUrl: string | undefined;
 
-      const endpoint = PROJECT_ENDPOINT;
-      const projectId = APPWRITE_PROJECT;
+      if (image instanceof File) {
+        const file = await storage.createFile(
+          IMAGES_BUCKET_ID,
+          ID.unique(),
+          image,
+        );
 
-      if (!endpoint || !projectId) {
-        console.error("Missing APPWRITE_ENDPOINT or APPWRITE_PROJECT_ID in env");
-        return c.text("Server misconfiguration", 500);
+        const endpoint = PROJECT_ENDPOINT;
+        const projectId = APPWRITE_PROJECT;
+
+        if (!endpoint || !projectId) {
+          console.error("Missing APPWRITE_ENDPOINT or APPWRITE_PROJECT_ID in env");
+          return c.text("Server misconfiguration", 500);
+        }
+
+        //Will fix later but for now HARDCODED KA MUNA
+        uploadedImageUrl = getFileViewUrl(file.$id);
       }
-
-      //Will fix later but for now HARDCODED KA MUNA
-      uploadedImageUrl = getFileViewUrl(file.$id);
-    }
 
     const workspace = await databases.createDocument(
       DATABASE_ID,
@@ -88,7 +93,7 @@ const app = new Hono()
         role: MemberRole.ADMIN,
       }
     )
-    return c.json(workspace);
+    return c.json({ data: workspace });
   }
 );
 

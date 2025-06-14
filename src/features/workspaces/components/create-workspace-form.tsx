@@ -3,18 +3,20 @@
 import { z } from "zod";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-import { createWorkspacesSchema } from "../schemas";
-import { useCreateWorkspace } from "../api/use-create-workspace";
 
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { ImageIcon } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+import { createWorkspacesSchema } from "../schemas";
+import { useCreateWorkspace } from "../api/use-create-workspace";
 
 import { Card,  CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormLabel, FormMessage, FormItem} from "@/components/ui/form";
+
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DottedSeparator } from "@/components/dotted-line";
 import { Button } from "@/components/ui/button";
 
@@ -23,10 +25,11 @@ interface CreateWorkspaceFormProp{
 }
 
 export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProp) => {
+    const router = useRouter();
+
     const { mutate, isPending } = useCreateWorkspace(); 
 
     const inputRef = useRef<HTMLInputElement>(null);
-
 
     const form = useForm<z.infer<typeof createWorkspacesSchema>>({
         resolver: zodResolver(createWorkspacesSchema),
@@ -36,28 +39,40 @@ export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProp) => {
     });
 
     const onSubmit = (values: z.infer<typeof createWorkspacesSchema>) => {
-        const finalValues = {
-          ...values,
-          image: values.image instanceof File ? values.image : "",
-        };
-      
-        mutate(
-          { form: finalValues },
-          {
-            onSuccess: () => {
-              form.reset({
-                name: "",
-                image: undefined, // Explicitly reset image field
-              });
-      
-              // Clear the input file manually
-              if (inputRef.current) {
-                inputRef.current.value = "";
-              }
-            },
-          }
-        );
-      };
+  const finalValues = {
+    ...values,
+    image: values.image instanceof File ? values.image : "",
+  };
+
+  mutate(
+    { form: finalValues },
+    {
+      onSuccess: (res) => {
+        // Access the workspace data from the response
+        const workspace = res.data;
+
+        // Reset the form values
+        form.reset({
+          name: "",
+          image: undefined,
+        });
+
+        // Clear the file input manually
+        if (inputRef.current) {
+          inputRef.current.value = "";
+        }
+
+        // Redirect to the created workspace
+        router.push(`/workspaces/${workspace.$id}`);
+      },
+      onError: (err) => {
+        console.error("Error creating workspace:", err);
+        // (Optional) Handle UI error if needed
+      },
+    }
+  );
+};
+
       
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
