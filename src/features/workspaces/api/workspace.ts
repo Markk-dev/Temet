@@ -10,5 +10,6 @@ export type workspace = {
     userId: string;
     imageUrl?: string;
     inviteCode: string;
+    [key: string]: any; 
 };
   

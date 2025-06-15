@@ -19,6 +19,7 @@ import { Form, FormControl, FormField, FormLabel, FormMessage, FormItem} from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DottedSeparator } from "@/components/dotted-line";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface CreateWorkspaceFormProp{
     onCancel ?: () => void;
@@ -39,41 +40,21 @@ export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProp) => {
     });
 
     const onSubmit = (values: z.infer<typeof createWorkspacesSchema>) => {
-  const finalValues = {
-    ...values,
-    image: values.image instanceof File ? values.image : "",
-  };
-
-  mutate(
-    { form: finalValues },
-    {
-      onSuccess: (res) => {
-        // Access the workspace data from the response
-        const workspace = res.data;
-
-        // Reset the form values
-        form.reset({
-          name: "",
-          image: undefined,
-        });
-
-        // Clear the file input manually
-        if (inputRef.current) {
-          inputRef.current.value = "";
-        }
-
-        // Redirect to the created workspace
-        router.push(`/workspaces/${workspace.$id}`);
-      },
-      onError: (err) => {
-        console.error("Error creating workspace:", err);
-        // (Optional) Handle UI error if needed
-      },
-    }
-  );
-};
-
+        const finalValues = {
+          ...values,
+          image: values.image instanceof File ? values.image : "",
+        };
       
+        mutate(
+          { form: finalValues },
+          {
+            onSuccess: ({data}) => {
+              form.reset();
+              router.push(`/workspaces/${data.$id}`);
+            },
+          }
+        );
+      };
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
@@ -149,7 +130,7 @@ export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProp) => {
                                                     ref={inputRef}
                                                     accept=".jpg, .jpeg, .png, .svg"
                                                     onChange={handleImageChange}
-                                                    disabled={isPending}
+                                                    disabled={isPending}                                    
                                                 />
                                                 <Button className="w-fit mt-2" type="button" disabled={isPending} variant="tertiary"size="xs" onClick={() => inputRef.current?.click()}>
                                                 
@@ -163,7 +144,14 @@ export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProp) => {
                          </div>
                          <DottedSeparator className="py-7"/>
                          <div className="flex items-center justify-between">
-                            <Button type="button"size="lg" variant="secondary" onClick={onCancel} disabled={isPending}>
+                            <Button 
+                                type="button"
+                                size="lg" 
+                                variant="secondary" 
+                                onClick={onCancel} 
+                                disabled={isPending} 
+                                className={cn(!onCancel && "invisible")}
+                                >
                                 Cancel
                             </Button>
                             <Button type="submit" size="lg" variant="primary" disabled={isPending}>
