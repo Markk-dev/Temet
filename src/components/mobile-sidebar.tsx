@@ -9,8 +9,6 @@ import { MenuIcon } from "lucide-react";
 import { Sidebar } from "./sidebar";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 
-
-
 export const MobileSidebar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();
@@ -18,7 +16,6 @@ export const MobileSidebar = () => {
     useEffect(() => {
         setIsOpen(false);
     }, [pathname]);
-
 
     return (
         <Sheet modal={false} open={isOpen} onOpenChange={setIsOpen}>
