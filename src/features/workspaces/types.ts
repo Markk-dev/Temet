@@ -2,7 +2,7 @@ import { Models } from "node-appwrite";
 
 export type Workspace = Models.Document & {
     name: string;
-    imageURL: string;
+    imageUrl: string;
     inviteCode: string;
     userId: string;
     

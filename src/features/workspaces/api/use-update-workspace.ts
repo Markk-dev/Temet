@@ -3,7 +3,7 @@ import { InferRequestType, InferResponseType } from "hono";
 import { toast } from "sonner";
 
 import { client } from "@/lib/rpc";
-import { workspace } from "./workspace";
+// import { workspace } from "./workspace";
 
 
 type ResponseType = InferResponseType<typeof client.api.workspaces[":workspaceId"]["$patch"], 200>;

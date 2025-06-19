@@ -39,7 +39,7 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
         resolver: zodResolver(updateWorkspacesSchema),
         defaultValues: {
             ...initialValues,
-            image: initialValues.imageURL ?? "",
+            image: initialValues.imageUrl ?? "",
             
         },
     });
@@ -47,7 +47,7 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
     const onSubmit = (values: z.infer<typeof updateWorkspacesSchema>) => {
         const finalValues = {
           ...values,
-          image: values.image instanceof File ? values.image : undefined
+          image: values.image instanceof File ? values.image : ""
         };
       
         mutate(
@@ -144,7 +144,6 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
                                                     disabled={isPending}                                    
                                                 />
                                                 <Button className="w-fit mt-2" type="button" disabled={isPending} variant="tertiary"size="xs" onClick={() => inputRef.current?.click()}>
-                                                
                                                     Upload Images
                                                 </Button>
                                             </div>
