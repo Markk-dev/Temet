@@ -132,10 +132,32 @@ export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProp) => {
                                                     onChange={handleImageChange}
                                                     disabled={isPending}                                    
                                                 />
-                                                <Button className="w-fit mt-2" type="button" disabled={isPending} variant="tertiary"size="xs" onClick={() => inputRef.current?.click()}>
-                                                
+                                                {field.value ? (
+                                                <Button className="w-fit mt-2"
+                                                 type="button" 
+                                                 disabled={isPending} 
+                                                 variant="deletion"
+                                                 size="xs" 
+                                                 onClick={() => {
+                                                    field.onChange(null);
+                                                    if (inputRef.current) {
+                                                        inputRef.current.value = "";
+                                                    }
+                                                 }}
+                                                 >
+                                                    Remove Image
+                                                </Button>
+                                                ) : (
+                                                    <Button className="w-fit mt-2"
+                                                 type="button" 
+                                                 disabled={isPending} 
+                                                 variant="tertiary"
+                                                 size="xs" 
+                                                 onClick={() => inputRef.current?.click()}
+                                                 >
                                                     Upload Images
                                                 </Button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
