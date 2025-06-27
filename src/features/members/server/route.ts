@@ -82,13 +82,10 @@ const app = new Hono()
             userId: user.$id,
         });
 
-        if(!member){
+        if(!member || member.role !== MemberRole.ADMIN){
             return c.json({ error: "Unauthorized" }, 401);
         };
 
-        if(member.$id !== memberToDelete.$id && member.role !== MemberRole.ADMIN){
-        };
-        
         if(allMembersInWorkspace.total === 1){
             return c.json({ error: "Cannot delete the last member" }, 400);
         };
@@ -130,11 +127,7 @@ const app = new Hono()
             userId: user.$id,
         });
 
-        if(!member){
-            return c.json({ error: "Unauthorized" }, 401);
-        };
-        
-        if(member.$id !== memberToUpdate.$id){
+        if(!member || member.role !== MemberRole.ADMIN){
             return c.json({ error: "Unauthorized" }, 401);
         };
         

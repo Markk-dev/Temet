@@ -6,7 +6,6 @@ interface useGetMembersProps {
     workspaceId: string;
 }
 
-
 export const useGetMembers = ({
     workspaceId,
 }: useGetMembersProps) => {
