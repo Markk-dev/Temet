@@ -85,11 +85,7 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
 
     resetInviteCode({
       param: { workspaceId: initialValues.$id },
-    },{
-      onSuccess: () => {
-        router.refresh();
-      } 
-    })
+    });
   }
 
   const onSubmit = (values: z.infer<typeof updateWorkspacesSchema>) => {
@@ -104,9 +100,8 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
         param: { workspaceId: initialValues.$id }
       },
       {
-        onSuccess: ({ data }) => {
+        onSuccess: () => {
           form.reset();
-          router.push(`/workspaces/${data.$id}`);
         },
       }
     );

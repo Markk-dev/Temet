@@ -6,8 +6,9 @@ import { zValidator } from '@hono/zod-validator';
 import { SessionMiddleware } from '@/lib/session-middleware';
 import { getMembers } from '@/features/members/utils';
 import { APPWRITE_PROJECT, DATABASE_ID, IMAGES_BUCKET_ID, PROJECT_ENDPOINT, PROJECTS_ID } from '@/config';
-import { createProjectSchema } from '../schema';
+import { createProjectSchema, updateProjectSchema } from '../schema';
 import { getFileViewUrl } from '@/lib/utils';
+import { Project } from '../types';
 
 
 const app = new  Hono()
@@ -98,6 +99,67 @@ const app = new  Hono()
 
             return c.json({data: projects});
         }
+    )
+    .patch(
+      "/:projectId",
+      SessionMiddleware,
+      zValidator("form", updateProjectSchema),
+      async (c) => {
+        const databases = c.get("databases");
+        const storage = c.get("storage");
+        const user = c.get("user");
+        
+        const { projectId } = c.req.param();
+        const { name, image } = c.req.valid("form");
+  
+        const existingProject = await databases.getDocument<Project>(
+          DATABASE_ID,
+          PROJECTS_ID,
+          projectId,
+        );
+  
+        const member = await getMembers({
+          databases, 
+          workspaceId: existingProject.workspaceId,
+          userId: user.$id,
+        });
+  
+        if(!member){
+            return c.json({error: "Unauthorized"}, 401);
+        }
+  
+        let uploadedImageUrl: string | undefined;
+  
+        if (image instanceof File) {
+          const file = await storage.createFile(
+            IMAGES_BUCKET_ID,
+            ID.unique(),
+            image,
+          );
+  
+          if (!PROJECT_ENDPOINT || !APPWRITE_PROJECT) {
+            console.error("Missing APPWRITE_ENDPOINT or APPWRITE_PROJECT_ID in env");
+            return c.text("Server misconfiguration", 500);
+          }
+  
+          //Will fix later but for now HARDCODED KA MUNA
+          uploadedImageUrl = getFileViewUrl(file.$id);
+        } else {
+          uploadedImageUrl = image;
+        }
+  
+        const project = await databases.updateDocument(
+          DATABASE_ID,
+          PROJECTS_ID,
+          projectId,
+          {
+            name,
+            imageUrl: uploadedImageUrl,
+          
+          }
+        );
+        return c.json({ data: project });
+      }
     )
 
 export default app;

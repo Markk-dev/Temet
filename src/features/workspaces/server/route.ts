@@ -153,7 +153,6 @@ const app = new Hono()
       return c.json({ data: workspace });
     }
   )
-
   .delete(
     "/:workspaceId",
     SessionMiddleware,
