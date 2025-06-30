@@ -83,7 +83,7 @@ export const EditProjectForm = ({ onCancel, initialValues }: EditProjectFormProp
       },
       {
         onSuccess: () => {
-          form.reset();
+          form.reset(finalValues);
         },
       }
     );

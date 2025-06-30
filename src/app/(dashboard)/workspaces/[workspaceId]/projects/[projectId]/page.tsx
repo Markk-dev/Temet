@@ -8,9 +8,10 @@ import { getCurrent } from "@/features/auth/queries";
 import { getProject } from "@/features/projects/queries";
 
 import { ProjectAvatar } from "@/features/projects/components/project-avatar";
+import { TaskViewSwitcher } from "@/features/tasks/components/task-view-switcher";
 
 interface ProjectIdPageProps {
-    params: { workspaceId: string; projectId: string };
+    params: Promise<{ workspaceId: string; projectId: string }>;
 }
 
 const ProjectIdPage = async ({
@@ -21,8 +22,10 @@ const ProjectIdPage = async ({
     const user = await getCurrent();
     if(!user) redirect("/sign-in");
 
+    const { projectId } = await params;
+
     const initialValues = await getProject({
-        projectId: params.projectId,
+        projectId: projectId,
     });
 
     if(!initialValues) {
@@ -50,6 +53,7 @@ const ProjectIdPage = async ({
                     </Button>
                 </div>
            </div>
+           <TaskViewSwitcher/>
         </div>
     )
 }
