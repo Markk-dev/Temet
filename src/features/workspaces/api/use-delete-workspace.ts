@@ -3,11 +3,8 @@ import { InferRequestType, InferResponseType } from "hono";
 import { toast } from "sonner";
 
 import { client } from "@/lib/rpc";
-import { workspace } from "./workspace";
 
-
-// type ResponseType = { data: workspace };
-type ResponseType  = InferResponseType<typeof client.api.workspaces[":workspaceId"]["$delete"], 200>;
+type ResponseType = InferResponseType<typeof client.api.workspaces[":workspaceId"]["$delete"], 200>;
 type RequestType  = InferRequestType<typeof client.api.workspaces[":workspaceId"]["$delete"]>;
 
 export const useDeleteWorkspace = () => {
@@ -25,11 +22,11 @@ export const useDeleteWorkspace = () => {
       return json as ResponseType;
     },
     onSuccess: ({data}) => {
-      toast.success("Workspace deleted");
+      toast.success("Workspace delete");
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       queryClient.invalidateQueries({ queryKey: ["workspaces", data.$id] });
     },
-    onError: () => {
+    onError: () => {  
       toast.error("Failed to delete workspace");
     },
   });
