@@ -263,7 +263,7 @@ export const EditProjectForm = ({ onCancel, initialValues }: EditProjectFormProp
   if (isOnDesktop) return FormContent;
 
   return (
-    <Drawer open onOpenChange={() => router.push(`/project/${initialValues.$id}`)}>
+    <Drawer open onOpenChange={() => router.push(`/workspaces/${initialValues.workspaceId}/projects/${initialValues.$id}`)}>
       <DrawerContent>
         <div className="p-4 overflow-y-auto max-h-[85vh]">
           {FormContent}

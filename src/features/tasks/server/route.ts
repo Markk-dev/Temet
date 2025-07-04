@@ -75,7 +75,7 @@ const app = new Hono()
 
         if(assigneeId){
             console.log("assigneeId: ", assigneeId);
-            query.push(Query.equal("assigneeId", assigneeId));
+            query.push(Query.contains("assigneeId", [assigneeId]));
         }
 
         if(dueDate){
@@ -95,7 +95,7 @@ const app = new Hono()
         );
 
         const projectIds = tasks.documents.map((task) => task.projectId);
-        const assigneeIds = tasks.documents.map((task) => task.assigneeId);
+        const assigneeIds = tasks.documents.flatMap((task) => task.assigneeId);
 
         const projects = await databases.listDocuments<Project>(
             DATABASE_ID,
@@ -109,10 +109,9 @@ const app = new Hono()
             assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
         );
 
-        const assignees = await Promise.all(
+        const assigneesList = await Promise.all(
             members.documents.map(async (member) => {
                 const user = await users.get(member.userId);
-
                 return {
                     ...member,
                     name: user.name,
@@ -125,15 +124,11 @@ const app = new Hono()
             const project = projects.documents.find(
                 (project) => project.$id === task.projectId,
             );
-
-            const assignee = assignees.find(
-                (assignee) => assignee.$id === task.assigneeId,
-            );
-
+            const assignees = assigneesList.filter((assignee) => task.assigneeId.includes(assignee.$id));
             return {
                 ...task,
                 project,
-                assignee,
+                assignees,
             };
         });
         
