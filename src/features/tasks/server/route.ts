@@ -5,7 +5,7 @@ import { zValidator } from "@hono/zod-validator";
 
 import { getMembers } from "@/features/members/utils";
 
-import { TaskStatus } from "../types";
+import { Task, TaskStatus } from "../types";
 import { Project } from "@/features/projects/types";
 
 import { createTaskSchema } from "../schemas";
@@ -88,7 +88,7 @@ const app = new Hono()
             query.push(Query.search("name", search));
         }
 
-        const tasks = await databases.listDocuments(
+        const tasks = await databases.listDocuments<Task>(
             DATABASE_ID,
             TASKS_ID,
             query,
@@ -124,7 +124,9 @@ const app = new Hono()
             const project = projects.documents.find(
                 (project) => project.$id === task.projectId,
             );
+            
             const assignees = assigneesList.filter((assignee) => task.assigneeId.includes(assignee.$id));
+            
             return {
                 ...task,
                 project,
