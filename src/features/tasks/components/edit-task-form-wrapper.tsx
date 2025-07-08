@@ -1,10 +1,12 @@
 import { Loader } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useEffect } from "react";
 
 import { useGetTask } from "../api/use-get-tasks";
 import { useGetMembers } from "@/features/members/api/use-get-members";
 import  { useGetProjects } from "@/features/projects/api/use-get-projects";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
+import { useQueryClient } from '@tanstack/react-query';
 
 import { EditTaskForm } from "./edit-task-form";
 
@@ -20,9 +22,13 @@ export const EditTaskFormWrapper = ({
 }: EditTaskFormWrapperProps) => {
     const workspaceId = useWorkspaceId();
 
-    const {data: initialValues, isLoading: isLoadingTask } = useGetTask({
+    const {data: initialValues, isLoading: isLoadingTask, refetch } = useGetTask({
         taskId: id,
     })
+
+    useEffect(() => {
+        refetch();
+    }, [id, refetch]);
 
     const { data: projects, isLoading: isLoadingProjects } = useGetProjects({workspaceId});
     const { data: members, isLoading: isLoadingMembers } = useGetMembers({workspaceId});

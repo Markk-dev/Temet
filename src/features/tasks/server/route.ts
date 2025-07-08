@@ -158,7 +158,9 @@ const app = new Hono()
                 (project) => project.$id === task.projectId,
             );
             
-            const assignees = assigneesList.filter((assignee) => task.assigneeId.includes(assignee.$id));
+            const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
+
+            const assignees = assigneesList.filter((assignee) => assigneeIds.includes(assignee.$id));
             
             return {
                 ...task,
@@ -317,25 +319,33 @@ const app = new Hono()
             task.projectId,
         );
 
-        const member = await databases.getDocument(
+        const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
+
+        const members = await databases.listDocuments(
             DATABASE_ID,
             MEMBERS_ID,
-            task.assigneeId,
+            [Query.contains("$id", assigneeIds)]
         );
 
-        const user = await users.get(member.userId);
+        const assignee = await Promise.all(
+            members.documents.map(async (member) => {
+                const user = await users.get(member.userId);
+                return {
+                    ...member,
+                    name: user.name,
+                    email: user.email,
+                };
+            })
+        );
 
-        const assignee = {
-            ...member,
-            name: user.name,
-            email: user.email,
-        };
+        // If you want a single object when only one assignee:
+        const assigneeResult = assigneeIds.length === 1 ? assignee[0] : assignee;
 
         return c.json({
             data: {
                 ...task,
                 project,
-                assignee,
+                assignee: assigneeResult,
             }
         })
     }

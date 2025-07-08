@@ -8,6 +8,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUpdateTask } from "../api/use-update-task";
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 import { ProjectAvatar } from "@/features/projects/components/project-avatar";
@@ -34,6 +35,7 @@ interface EditTaskFormProps{
 export const EditTaskForm = ({ onCancel, projectOptions, memberOptions, initialValues }: EditTaskFormProps) => {
     const workspaceId= useWorkspaceId();
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const { mutate, isPending } = useUpdateTask(); 
 
@@ -56,6 +58,7 @@ export const EditTaskForm = ({ onCancel, projectOptions, memberOptions, initialV
     const onSubmit = (values: z.infer<typeof omittedSchema>) => {
         mutate({ json: values,  param: {taskId: initialValues.$id} }, {
             onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: ['task', initialValues.$id] });
                 form.reset();
                 onCancel?.();
             },
