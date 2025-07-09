@@ -28,6 +28,7 @@ import { useMedia } from "react-use";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useDeleteWorkspace } from "../api/use-delete-workspace";
 import { useResetInviteCode } from "../api/use-reset-invite-code";
+import { useEffect } from "react";
 
 
 interface EditWorkspaceFormProp {
@@ -63,6 +64,13 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
       image: initialValues.imageUrl ?? "",
     },
   });
+
+  useEffect(() => {
+    form.reset({
+      ...initialValues,
+      image: initialValues.imageUrl ?? "",
+    });
+  }, [initialValues]);
 
   const handleDelete = async () => {
     const ok = await confirmDelete();
@@ -100,8 +108,11 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
         param: { workspaceId: initialValues.$id }
       },
       {
-        onSuccess: () => {
-          form.reset();
+        onSuccess: (data) => {
+          form.reset({
+            ...data.data,
+            image: data.data.imageUrl ?? "",
+          });
         },
       }
     );
