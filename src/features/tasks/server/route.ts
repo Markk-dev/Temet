@@ -297,57 +297,64 @@ const app = new Hono()
         const { users } = await createAdminClient();
         const { taskId } = c.req.param();
 
-        const task = await databases.getDocument<Task>(
-            DATABASE_ID,
-            TASKS_ID,
-            taskId,
-        );
+        try {
+            const task = await databases.getDocument<Task>(
+                DATABASE_ID,
+                TASKS_ID,
+                taskId,
+            );
 
-        const currentMember = await getMembers({
-            databases,
-            workspaceId: task.workspaceId,
-            userId: currentUser.$id,
-        });
+            const currentMember = await getMembers({
+                databases,
+                workspaceId: task.workspaceId,
+                userId: currentUser.$id,
+            });
 
-        if(!currentMember) {
-            return c.json({error: "Unauthorized"}, 401)
-        }
-
-        const project = await databases.getDocument<Project>(
-            DATABASE_ID,
-            PROJECTS_ID,
-            task.projectId,
-        );
-
-        const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
-
-        const members = await databases.listDocuments(
-            DATABASE_ID,
-            MEMBERS_ID,
-            [Query.contains("$id", assigneeIds)]
-        );
-
-        const assignee = await Promise.all(
-            members.documents.map(async (member) => {
-                const user = await users.get(member.userId);
-                return {
-                    ...member,
-                    name: user.name,
-                    email: user.email,
-                };
-            })
-        );
-
-        // If you want a single object when only one assignee:
-        const assigneeResult = assigneeIds.length === 1 ? assignee[0] : assignee;
-
-        return c.json({
-            data: {
-                ...task,
-                project,
-                assignee: assigneeResult,
+            if(!currentMember) {
+                return c.json({error: "Unauthorized"}, 401)
             }
-        })
+
+            const project = await databases.getDocument<Project>(
+                DATABASE_ID,
+                PROJECTS_ID,
+                task.projectId,
+            );
+
+            const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
+
+            const members = await databases.listDocuments(
+                DATABASE_ID,
+                MEMBERS_ID,
+                [Query.contains("$id", assigneeIds)]
+            );
+
+            const assignee = await Promise.all(
+                members.documents.map(async (member) => {
+                    const user = await users.get(member.userId);
+                    return {
+                        ...member,
+                        name: user.name,
+                        email: user.email,
+                    };
+                })
+            );
+
+            // If you want a single object when only one assignee:
+            const assigneeResult = assigneeIds.length === 1 ? assignee[0] : assignee;
+
+            return c.json({
+                data: {
+                    ...task,
+                    project,
+                    assignee: assigneeResult,
+                }
+            })
+        } catch (err: any) {
+            if (err.code === 404) {
+                return c.json({ error: "Task not found" }, 404);
+            }
+            throw err; // Let other errors bubble up
+        }
     }
   )
   .post(

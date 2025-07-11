@@ -116,6 +116,7 @@ export const CreateTaskForm = ({ onCancel, projectOptions, memberOptions }: Crea
                                             onValueChange={field.onChange}
                                             defaultValue={field.value || []}
                                             placeholder="Select assignees"
+                                            className="font-normal text-sm"
                                         />
                                         <FormMessage />
                                     </FormItem>
