@@ -15,6 +15,7 @@ import {
 import { getCookie } from "hono/cookie";
 import { createMiddleware } from "hono/factory";
 import { AUTH_COOKIE } from "@/features/auth/constants";
+import { BYPASS_AUTH, BYPASS_USER } from "@/ByPass";
 
 type Context = {
     Variables: {
@@ -27,6 +28,16 @@ type Context = {
 }
 export const SessionMiddleware = createMiddleware<Context>(
     async (c, next) => {
+
+// // TODO: REMOVE THIS IN DEVELOPMENT 
+//         if (BYPASS_AUTH) {
+//             c.set("user", BYPASS_USER);
+//             c.set("databases", {} as unknown as DatabasesType);
+//             c.set("account", {} as unknown as AccountType);
+//             c.set("storage", {} as unknown as StorageType);
+//             return next();
+//         }
+
         const client = new Client()
         .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
         .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT!);

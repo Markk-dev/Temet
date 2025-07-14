@@ -31,8 +31,14 @@ export const useUpdateWorkspace = () => {
       queryClient.invalidateQueries({ queryKey: ["workspaces", data.$id] });
     },
 
-    onError: () => {
-      toast.error("Failed to create workspace");
+    onError: (error) => {
+      if (error instanceof Error && error.message.includes("File size not allowed")) {
+        toast.error("Max file size reached");
+      } else if (error instanceof Error && error.message.includes("Invalid file type")) {
+        toast.error("File type not allowed");
+      } else {
+        toast.error("Failed to update workspace");
+      }
     },
   });
 };
