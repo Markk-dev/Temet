@@ -5,11 +5,12 @@ import { zValidator } from '@hono/zod-validator';
 
 import { MemberRole } from '@/features/members/types';
 import { getMembers } from '@/features/members/utils';
-import { generateInviteCode, getFileViewUrl } from '@/lib/utils'; 
+import { generateInviteCode, getFileViewUrl, extractFileIdFromUrl } from '@/lib/utils'; 
 
 import { Workspace } from '../types';
 import { SessionMiddleware } from '@/lib/session-middleware';
 import { createWorkspacesSchema, updateWorkspacesSchema } from '../schemas';
+import { createAdminClient } from '@/lib/appwrite';
 
 import { DATABASE_ID, WORKSPACES_ID, IMAGES_BUCKET_ID, PROJECT_ENDPOINT, APPWRITE_PROJECT, MEMBERS_ID } from '@/config';
 
@@ -170,6 +171,26 @@ const app = new Hono()
 
       if(!member || member.role !==MemberRole.ADMIN){
           return c.json({error: "Unauthorized"}, 401);
+      }
+
+      // Get the workspace to check for imageUrl
+      const workspace = await databases.getDocument(
+        DATABASE_ID,
+        WORKSPACES_ID,
+        workspaceId,
+      );
+
+      // Delete the image from storage if it exists
+      if (workspace.imageUrl) {
+        const fileId = extractFileIdFromUrl(workspace.imageUrl);
+        if (fileId) {
+          const { storage } = await createAdminClient();
+          try {
+            await storage.deleteFile(IMAGES_BUCKET_ID, fileId);
+          } catch (e) {
+           
+          }
+        }
       }
 
       //TODO: DELETE MEMBERS, PROJECTS, TASK

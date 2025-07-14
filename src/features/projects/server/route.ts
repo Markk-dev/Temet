@@ -7,8 +7,9 @@ import { SessionMiddleware } from '@/lib/session-middleware';
 import { getMembers } from '@/features/members/utils';
 import { APPWRITE_PROJECT, DATABASE_ID, IMAGES_BUCKET_ID, PROJECT_ENDPOINT, PROJECTS_ID } from '@/config';
 import { createProjectSchema, updateProjectSchema } from '../schema';
-import { getFileViewUrl } from '@/lib/utils';
+import { getFileViewUrl, extractFileIdFromUrl } from '@/lib/utils';
 import { Project } from '../types';
+import { createAdminClient } from '@/lib/appwrite';
 
 
 const app = new  Hono()
@@ -186,6 +187,19 @@ const app = new  Hono()
             return c.json({error: "Unauthorized"}, 401);
         }
   
+        // Delete the image from storage if it exists
+        if (existingProject.imageUrl) {
+          const fileId = extractFileIdFromUrl(existingProject.imageUrl);
+          if (fileId) {
+            const { storage } = await createAdminClient();
+            try {
+              await storage.deleteFile(IMAGES_BUCKET_ID, fileId);
+            } catch (e) {
+              console.error('Failed to delete project image from storage:', e);
+            }
+          }
+        }
+
         //TODO: DELETE TASK
   
         await databases.deleteDocument(
