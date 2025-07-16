@@ -5,7 +5,7 @@ import { ID, Query } from 'node-appwrite';
 import { zValidator } from '@hono/zod-validator';
 import { SessionMiddleware } from '@/lib/session-middleware';
 import { getMembers } from '@/features/members/utils';
-import { APPWRITE_PROJECT, DATABASE_ID, IMAGES_BUCKET_ID, PROJECT_ENDPOINT, PROJECTS_ID } from '@/config';
+import { APPWRITE_PROJECT, DATABASE_ID, IMAGES_BUCKET_ID, PROJECT_ENDPOINT, PROJECTS_ID, TASKS_ID } from '@/config';
 import { createProjectSchema, updateProjectSchema } from '../schema';
 import { getFileViewUrl, extractFileIdFromUrl } from '@/lib/utils';
 import { Project } from '../types';
@@ -101,6 +101,33 @@ const app = new  Hono()
             return c.json({data: projects});
         }
     )
+    .get(
+      "/:projectId",
+      SessionMiddleware,
+      async (c) => {
+        const user = c.get("user");
+        const databases = c.get("databases");
+        const  { projectId } = c.req.param();
+  
+        const project = await databases.getDocument<Project>(
+          DATABASE_ID,
+          PROJECTS_ID,
+          projectId,
+        );
+
+        const member = await getMembers({
+          databases,
+          workspaceId: project.workspaceId,
+          userId: user.$id,
+        });
+
+        if(!member){
+          return c.json({ error: "Unauthorized" }, 401)
+        }
+
+        return c.json({data: project})
+      }
+    )
     .patch(
       "/:projectId",
       SessionMiddleware,
@@ -185,6 +212,33 @@ const app = new  Hono()
   
         if(!member){
             return c.json({error: "Unauthorized"}, 401);
+        }
+
+        // Check for tasks in this project
+        const tasks = await databases.listDocuments(
+          DATABASE_ID,
+          TASKS_ID,
+          [
+            Query.equal("projectId", projectId)
+          ]
+        );
+
+        // If there are tasks, check if all are DONE
+        if (tasks.total > 0) {
+          const notDone = tasks.documents.find(task => task.status !== "DONE");
+          if (notDone) {
+            return c.json({ error: "Cannot delete project: All tasks must be DONE or project must be empty." }, 400);
+          }
+        }
+
+        // CASCADE DELETE KAHIT BAWAL HAHA
+        // to make sure walang mag eeror if ever ma bypass
+        for (const task of tasks.documents) {
+          await databases.deleteDocument(
+            DATABASE_ID,
+            TASKS_ID,
+            task.$id
+          );
         }
   
         // Delete the image from storage if it exists

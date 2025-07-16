@@ -9,7 +9,6 @@ import { loginSchema, registerSchema } from "../scheme";
 
 import { createAdminClient } from "@/lib/appwrite";
 import { AUTH_COOKIE } from "../constants";
-import { success } from "zod/v4";
 import { SessionMiddleware } from "@/lib/session-middleware";
 
 

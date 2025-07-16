@@ -7,6 +7,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'syd.cloud.appwrite.io',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };

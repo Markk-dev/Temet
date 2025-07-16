@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { toast } from "sonner";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,7 +65,10 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
     },
   });
 
+  const [workspaceName, setWorkspaceName] = useState(initialValues.name);
+
   useEffect(() => {
+    setWorkspaceName(initialValues.name);
     form.reset({
       ...initialValues,
       image: initialValues.imageUrl ?? "",
@@ -108,14 +111,13 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
         param: { workspaceId: initialValues.$id }
       },
       {
-        onSuccess: (data) => {
-          form.reset({
-            ...data.data,
-            image: data.data.imageUrl ?? "",
-          });
+        onSuccess: async (data) => {
+          setWorkspaceName(data.data.name);
+          //
+          router.push(`/workspaces/${initialValues.$id}`)
         },
       }
-    );
+    ); 
   };
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,7 +150,7 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
             Back
           </Button>
           <CardTitle className="text-xl font-bold">
-            {initialValues.name}
+            {workspaceName}
           </CardTitle>
         </CardHeader>
 

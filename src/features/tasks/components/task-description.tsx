@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { PencilIcon, XIcon } from "lucide-react";
 
+import { Task } from "../types";
+
+import { useUpdateTask } from "../api/use-update-task";
+import { useQueryClient } from '@tanstack/react-query';
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { DottedSeparator } from "@/components/dotted-line";
-
-import { Task } from "../types";
-import { useUpdateTask } from "../api/use-update-task";
-import { useRouter } from "next/navigation";
-import { useQueryClient } from '@tanstack/react-query';
 
 interface TaskDescriptionProps {
     task: Task;
@@ -25,7 +25,6 @@ export const TaskDescription = ({ task }: TaskDescriptionProps) => {
     const queryClient = useQueryClient();
 
     const { mutate, isPending } = useUpdateTask();
-    const router = useRouter();
 
     const handleSave = () => {
         setIsEditing(false);
@@ -37,7 +36,6 @@ export const TaskDescription = ({ task }: TaskDescriptionProps) => {
             {
                 onSuccess: () => {
                     queryClient.invalidateQueries({ queryKey: ['task', task.$id] });
-                    router.refresh();
                 }
             }
         );

@@ -75,15 +75,16 @@ export const EditProjectForm = ({ onCancel, initialValues }: EditProjectFormProp
       ...values,
       image: values.image instanceof File ? values.image : ""
     };
-
+  
     mutate(
       {
         form: finalValues,
         param: { projectId: initialValues.$id }
       },
       {
-        onSuccess: () => {
-          form.reset(finalValues);
+        onSuccess: async () => {
+          await new Promise((res) => setTimeout(res, 100));
+          router.push(`/workspaces/${initialValues.workspaceId}/projects/${initialValues.$id}`);
         },
       }
     );
