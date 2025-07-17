@@ -36,6 +36,7 @@ export const TaskDescription = ({ task }: TaskDescriptionProps) => {
             {
                 onSuccess: () => {
                     queryClient.invalidateQueries({ queryKey: ['task', task.$id] });
+                    setIsEditing(false);
                 }
             }
         );
