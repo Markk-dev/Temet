@@ -13,7 +13,7 @@ const config: Config = {
   	extend: {
   		colors: {
 			dangerzone: '#FFE5E5',
-			// "grey-10": "#EAEFEF",
+			"grey-10": "#EAEFEF",
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

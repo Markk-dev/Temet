@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { snakeCaseToTitleCase } from "@/lib/utils";
 import { useEditTaskModal } from "../hooks/use-edit-task-modal";
 
+import { useCurrent } from "@/features/auth/api/use-current";
+
 function chunkArray<T>(arr: T[], size: number): T[][] {
     return arr.reduce((acc: T[][], _, i) => {
       if (i % size === 0) acc.push(arr.slice(i, i + size));
@@ -28,12 +30,18 @@ export const TaskOverview = ({
     assignee
 }: TaskOverviewProps) => {
     const {open} = useEditTaskModal();
+    
+    const { data: currentUser } = useCurrent();
+    const assigneesArr = Array.isArray(assignee) ? assignee : assignee ? [assignee] : [];
+    const isAssignee = assigneesArr.some(
+        (a: any) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
+    );
     return (
         <div className="flex flex-col gap-y-4 col-span-1">
             <div className="bg-muted rounded-lg p-4">
                 <div className="flex items-center justify-between"> 
                     <p className="text-lg font-semibold">Overview</p>
-                    <Button onClick={() => open(task.$id)}size="sm" variant="secondary">
+                    <Button onClick={() => open(task.$id)} size="sm" variant="secondary" disabled={!isAssignee}>
                         <PencilIcon className="size-4 mr-2"/>
                         Edit
                     </Button>

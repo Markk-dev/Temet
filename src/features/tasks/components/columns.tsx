@@ -14,6 +14,8 @@ import { TaskDate } from "./task-date";
 import { snakeCaseToTitleCase } from "@/lib/utils";
 import { TaskActions } from "./task-actions";
 
+import { useCurrent } from "@/features/auth/api/use-current";
+
 type Member = { $id: string; name: string; /* other fields */ };
 
 export const columns: ColumnDef<Task>[] = [
@@ -147,9 +149,14 @@ export const columns: ColumnDef<Task>[] = [
         cell: ({row}) => {
             const id = row.original.$id;
             const projectId = row.original.projectId;
-            
+            const assignees = row.original.assignees;
+            const { data: currentUser } = useCurrent();
+            const isAssignee = assignees?.some(
+              (a: any) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
+            );
+            console.log("currentUser", currentUser, "assignees", assignees);
             return (
-                <TaskActions id={id} projectId={projectId}>
+                <TaskActions id={id} projectId={projectId} disabled={!isAssignee}>
                     <Button variant="ghost" className="size-8 p-0">
                         <MoreVertical className="size-4"/>
                     </Button>

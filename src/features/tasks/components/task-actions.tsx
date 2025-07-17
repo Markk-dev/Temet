@@ -13,9 +13,10 @@ interface TaskActionsProps {
     id: string;
     projectId: string;
     children: React.ReactNode;
+    disabled?: boolean;
 }
 
-export const TaskActions = ({id, projectId, children}: TaskActionsProps) => {
+export const TaskActions = ({id, projectId, children, disabled}: TaskActionsProps) => {
     const  workspaceId = useWorkspaceId();
     const router = useRouter();
 
@@ -72,6 +73,7 @@ export const TaskActions = ({id, projectId, children}: TaskActionsProps) => {
                     <DropdownMenuItem
                         onClick={() => open(id)}
                         className="font-medium p-[10px]"
+                        disabled={disabled}
                     >
                         <PencilIcon className="size-4 mr-2 stroke-2"/>
                         Edit Task
@@ -79,7 +81,7 @@ export const TaskActions = ({id, projectId, children}: TaskActionsProps) => {
                                   
                     <DropdownMenuItem
                         onClick={onDelete}
-                        disabled={isPending}
+                        disabled={isPending || disabled}
                         className="text-red-700 focus:text-red-700font-medium p-[10px]"
                     >
                         <TrashIcon className="size-4 mr-2 stroke-2"/>

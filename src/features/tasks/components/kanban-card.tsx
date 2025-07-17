@@ -10,17 +10,23 @@ import { TaskDate } from "./task-date";
 import { ProjectAvatar } from "@/features/projects/components/project-avatar";
 import { MemberAvatar } from "@/features/members/components/members-avatar";
 
+import { useCurrent } from "@/features/auth/api/use-current";
+
 
 interface KanbanCardProps {
     task: Task;
 }
 
 export const KanbanCard = ({ task }: KanbanCardProps) => {
+    const { data: currentUser } = useCurrent();
+    const isAssignee = task.assignees?.some(
+        (a: any) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
+    );
     return (
         <div className="bg-white p-2.5 mb-1.5 rounded shadow-sm space-y-3">
             <div className="flex items-start justify-between gap-x-2">
                 <p className="text-sm line-clamp-2">{task.name}</p>
-                <TaskActions id={task.$id} projectId={task.projectId}>
+                <TaskActions id={task.$id} projectId={task.projectId} disabled={!isAssignee}>
                     <MoreHorizontal className="size-[18px] stroke-1 shrink-0 text-neutral-700 hover:opacity-75 transition"/>
                 </TaskActions>
             </div>

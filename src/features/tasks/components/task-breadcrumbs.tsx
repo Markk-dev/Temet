@@ -11,6 +11,8 @@ import { useDeleteTask } from "../api/use-delete-task";
 import { UseConfirm } from "@/hooks/use-confirm";
 import { useRouter } from "next/navigation";
 
+import { useCurrent } from "@/features/auth/api/use-current";
+
 interface TaskBreadcrumbsProps {
     project: Project;
     task: Task;
@@ -27,6 +29,11 @@ export const TaskBreadcrumbs = ({
         "Delete Task?",
         "This action cannot be undone.",
         "deletion",
+    );
+    const { data: currentUser } = useCurrent();
+    const assigneesArr = Array.isArray(task.assignees) ? task.assignees : task.assignees ? [task.assignees] : [];
+    const isAssignee = assigneesArr.some(
+        (a: any) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
     );
 
     const handleDeleteTask = async () => {
@@ -60,7 +67,7 @@ export const TaskBreadcrumbs = ({
         </p>
         <Button
           onClick={handleDeleteTask}
-          disabled={isPending}
+          disabled={isPending || !isAssignee}
           className="ml-auto"
           variant="deletion"
           size="sm"

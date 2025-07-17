@@ -5,6 +5,7 @@ import { Task } from "../types";
 
 import { useUpdateTask } from "../api/use-update-task";
 import { useQueryClient } from '@tanstack/react-query';
+import { useCurrent } from "@/features/auth/api/use-current";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +18,12 @@ interface TaskDescriptionProps {
 export const TaskDescription = ({ task }: TaskDescriptionProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [value, setValue] = useState(task.description);
+
+    const { data: currentUser } = useCurrent();
+    const assigneesArr = Array.isArray(task.assignees) ? task.assignees : task.assignees ? [task.assignees] : [];
+    const isAssignee = assigneesArr.some(
+        (a: any) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
+    );
 
     useEffect(() => {
         setValue(task.description);
@@ -45,8 +52,8 @@ export const TaskDescription = ({ task }: TaskDescriptionProps) => {
     return (
         <div className="p-4 border rounded-lg">
             <div className="flex items-center justify-between">
-                <p className="text-lg font-semibold">Overview</p>
-                <Button onClick={() => setIsEditing((prev) => !prev)} variant="secondary" size="sm">
+                <p className="text-lg font-semibold">Task Description</p>
+                <Button onClick={() => setIsEditing((prev) => !prev)} variant="secondary" size="sm" disabled={!isAssignee}>
                     {isEditing ? (
                       <XIcon className="size-4 mr-2"/>
                     ) : (
