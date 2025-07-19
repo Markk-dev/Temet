@@ -10,7 +10,6 @@ import { useCreateTask } from "../api/use-create-task";
 
 import { createTaskSchema } from "../schemas";
 
-import { MemberAvatar } from "@/features/members/components/members-avatar";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 import { ProjectAvatar } from "@/features/projects/components/project-avatar";
 

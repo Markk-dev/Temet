@@ -95,7 +95,7 @@ const app = new  Hono()
                 return c.json({ error: "Unauthorized" }, 401)
             }
 
-            const projects = await databases.listDocuments(
+            const projects = await databases.listDocuments<Project>(
                 DATABASE_ID,
                 PROJECTS_ID,
                 [
@@ -273,6 +273,7 @@ const app = new  Hono()
         return c.json({data : { $id: existingProject.$id} })
       }
     )
+    //Newly Added
     .get(
       "/:projectId/analytics",
       SessionMiddleware,
