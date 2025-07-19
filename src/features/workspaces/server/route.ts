@@ -12,6 +12,8 @@ import { SessionMiddleware } from '@/lib/session-middleware';
 import { createWorkspacesSchema, updateWorkspacesSchema } from '../schemas';
 import { createAdminClient } from '@/lib/appwrite';
 
+import { pusher } from "@/lib/pusher";
+
 import { DATABASE_ID, WORKSPACES_ID, IMAGES_BUCKET_ID, PROJECT_ENDPOINT, APPWRITE_PROJECT, MEMBERS_ID } from '@/config';
 
 const app = new Hono()
@@ -142,7 +144,8 @@ const app = new Hono()
         workspaceId: workspace.$id,
         role: MemberRole.ADMIN,
       }
-    )
+    );
+    await pusher.trigger("workspaces", "workspace-created", { workspace });
     return c.json({ data: workspace });
   }
 )
@@ -199,6 +202,7 @@ const app = new Hono()
         
         }
       );
+      await pusher.trigger("workspaces", "workspace-updated", { workspace });
       return c.json({ data: workspace });
     }
   )
@@ -248,6 +252,7 @@ const app = new Hono()
         WORKSPACES_ID,
         workspaceId,
       );
+      await pusher.trigger("workspaces", "workspace-deleted", { workspaceId });
 
       return c.json({data : { $id: workspaceId} })
     }
@@ -279,6 +284,7 @@ const app = new Hono()
           inviteCode: generateInviteCode(6),
         }
       );
+      await pusher.trigger("workspaces", "workspace-invite-reset", { workspace });
 
       return c.json({data : workspace})
     }
@@ -325,6 +331,7 @@ const app = new Hono()
           role: MemberRole.MEMBER,
         },
       );
+      await pusher.trigger("workspaces", "workspace-joined", { workspaceId, userId: user.$id });
 
       return c.json({ data: workspace });
     }

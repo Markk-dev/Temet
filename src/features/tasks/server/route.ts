@@ -13,6 +13,7 @@ import { DATABASE_ID, MEMBERS_ID, PROJECTS_ID, TASKS_ID } from "@/config";
 
 import { createAdminClient } from "@/lib/appwrite";
 import { SessionMiddleware } from "@/lib/session-middleware";
+import { pusher } from "@/lib/pusher";
 
 
 // TODO: will add storage per workspace later
@@ -49,6 +50,8 @@ const app = new Hono()
             TASKS_ID,
             taskId,
         );
+
+        await pusher.trigger("tasks", "task-deleted", { taskId });
 
         return c.json({data: {$id: task.$id} });
     }
@@ -234,6 +237,8 @@ const app = new Hono()
             },
         );
 
+        await pusher.trigger("tasks", "task-created", { task });
+
         return c.json({data: task})
     }
   )
@@ -284,6 +289,8 @@ const app = new Hono()
                 description,
             },
         );
+
+        await pusher.trigger("tasks", "task-updated", { task });
 
         return c.json({data: task})
     }
@@ -416,6 +423,8 @@ const app = new Hono()
           })
         );
         
+        await pusher.trigger("tasks", "tasks-bulk-updated", { tasks: updatedTasks });
+
         return c.json({ data: updatedTasks });
     }
   )

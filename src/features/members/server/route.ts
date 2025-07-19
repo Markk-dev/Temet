@@ -8,6 +8,7 @@ import { getMembers } from "../utils";
 import { DATABASE_ID, MEMBERS_ID } from "@/config";
 import { Query } from "node-appwrite";
 import { MemberRole } from "../types";
+import { pusher } from "@/lib/pusher";
 
 const app = new Hono()
 .get(
@@ -96,6 +97,8 @@ const app = new Hono()
             memberId,
         );
 
+        await pusher.trigger("members", "member-deleted", { memberId });
+
         return c.json({ "data": { $id: memberToDelete.$id}})
     },
 )
@@ -143,6 +146,8 @@ const app = new Hono()
                 role,
             }
         );
+
+        await pusher.trigger("members", "member-updated", { memberId, role });
 
         return c.json({ "data": { $id: memberToUpdate.$id}})
     },
