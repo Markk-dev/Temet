@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { PlusIcon, CalendarIcon, SettingsIcon } from "lucide-react";
+import { PlusIcon, CalendarIcon, SettingsIcon} from "lucide-react";
 import {formatDistanceToNow } from "date-fns";
 
 import { Task } from "@/features/tasks/types";
@@ -22,7 +22,8 @@ import { Project } from "@/features/projects/types";
 import { ProjectAvatar } from "@/features/projects/components/project-avatar";
 import { Member } from "@/features/members/types";
 import { MemberAvatar } from "@/features/members/components/members-avatar";
-
+import { snakeCaseToTitleCase } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export const WorkspaceIdClient = () => {
     const workspaceId = useWorkspaceId();
@@ -50,8 +51,10 @@ export const WorkspaceIdClient = () => {
             <Analytics data={analytics}/>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 <TaskList data={tasks.documents} total={tasks.total}/>
-                <ProjectList data={projects.documents} total={projects.total}/>
-                <MembersList data={members.documents} total={members.total}/>   
+                <div className="flex flex-col gap-4">
+                    <ProjectList data={projects.documents} total={projects.total}/>
+                    <MembersList data={members.documents} total={members.total}/>   
+                </div>
             </div>
         </div>
     );
@@ -60,7 +63,7 @@ export const WorkspaceIdClient = () => {
 interface TasklistProps {
     data: Task[];
     total: number;
-};
+}
 
 export const TaskList = ({ data, total }: TasklistProps) => {
     const workspaceId = useWorkspaceId();
@@ -70,7 +73,7 @@ export const TaskList = ({ data, total }: TasklistProps) => {
         <div className="flex flex-col gap-y-4 col-span-1">
            <div className="bg-muted rounded-lg p-4">
               <div className="flex items-center justify-between">
-                <p className="text-lg font-semibold">
+                <p className="text-sm font-semibold">
                     Tasks ({total})
                 </p>
                 <Button variant="muted" size="icon" onClick={createTask}>
@@ -78,16 +81,33 @@ export const TaskList = ({ data, total }: TasklistProps) => {
                 </Button>
               </div>
               <DottedSeparator className="my-4"/>
-              <ul className="flex flex-col gap-y-4">
+              <ul
+                className={`
+                  flex flex-col gap-y-4 max-h-72 overflow-y-auto pr-2
+                  task-scrollbar
+                `}
+                style={{ minHeight: "120px" }} // optional, for consistent look
+              >
                {data.map((task) => (
                 <li key={task.$id}>
-                  <Link href={`/workspaces/${workspaceId}/tasks/$/{task.$id}`}>
+                  <Link href={`/workspaces/${workspaceId}/tasks/${task.$id}`}>
                     <Card className="shadow-none rouded-lg hover:opacity-75 transition">
                         <CardContent className="p-4">
-                            <p className="text-lg truncate font-medium">{task.name}</p>
+                            <p className="text-sm truncate font-medium">{task.name}</p>
                             <div className="flex items-center gap-x-2">
-                                <p>{task.project?.name}</p>
+                                <div className="flex py-2 justify-center items-center gap-x-1">
+                                    <ProjectAvatar
+                                         className="size-5"
+                                         fallbackClassName="text-lg"
+                                         name={task.project?.name ?? ""}
+                                         image={task.project?.imageUrl}
+                                    />
+                                    <p className="text-xs">{task.project?.name}</p>
+                                </div>
                                 <div className="size-1 rounded-full bg-neutral-300"/>
+                                <Badge variant={task.status}>
+                                    {snakeCaseToTitleCase(task.status)}
+                                </Badge>
                                 <div className="text-sm text-muted-foreground flex items-center">
                                     <CalendarIcon className="size-3 mr-1"/>
                                     <span className="truncate">
@@ -138,7 +158,7 @@ export const ProjectList = ({ data, total }: ProjectlistProps) => {
               <ul className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                {data.map((project) => (
                 <li key={project.$id}>
-                  <Link href={`/workspaces/${workspaceId}/projects/$/{project.$id}`}>
+                  <Link href={`/workspaces/${workspaceId}/projects/${project.$id}`}>
                     <Card className="shadow-none rouded-lg hover:opacity-75 transition">
                         <CardContent className="p-4 flex items-center gap-x-2.5">
                             <ProjectAvatar 

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { InferRequestType, InferResponseType } from "hono";
+import { InferRequestType } from "hono";
 import { toast } from "sonner";
 
 import { client } from "@/lib/rpc";
@@ -8,7 +8,6 @@ import { workspace } from "./workspace";
 
 type ResponseType = { data: workspace };
 type RequestType  = InferRequestType<typeof client.api.workspaces["$post"]>;
-// type ResponseType  = InferResponseType<typeof client.api.workspaces["$post"], 200>;
 
 export const useCreateWorkspace = () => {
   const queryClient = useQueryClient();

@@ -237,12 +237,12 @@ const app = new Hono()
 
       // Delete the image from storage if it exists
       if (workspace.imageUrl) {
-        const fileId = extractFileIdFromUrl(workspace.imageUrl);
+          const fileId = extractFileIdFromUrl(workspace.imageUrl);
         if (fileId) {
           const { storage } = await createAdminClient();
           try {
             await storage.deleteFile(IMAGES_BUCKET_ID, fileId);
-          } catch (e) {
+          } catch {
            
           }
         }

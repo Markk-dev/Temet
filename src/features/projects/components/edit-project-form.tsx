@@ -1,7 +1,6 @@
 "use client"
 
 import { z } from "zod";
-import { toast } from "sonner";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -9,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
-import { ArrowLeftIcon, CopyIcon, ImageIcon } from "lucide-react";
+import { ArrowLeftIcon, ImageIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Project } from "../types";
@@ -106,6 +105,7 @@ export const EditProjectForm = ({ onCancel, initialValues }: EditProjectFormProp
             variant="secondary"
             size="sm"
             onClick={onCancel ? onCancel : () => router.push(`/workspaces/${initialValues.workspaceId}/projects/${initialValues.$id}`)}
+            disabled={isPending || isDeletingProject}
           >
             <ArrowLeftIcon className="size-4 mr-2" />
             Back

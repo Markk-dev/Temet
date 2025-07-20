@@ -3,14 +3,12 @@
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 
-import { useRouter } from "next/navigation";
 import { useForm, SubmitHandler } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUpdateTask } from "../api/use-update-task";
 import { useQueryClient } from '@tanstack/react-query';
 
-import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 import { ProjectAvatar } from "@/features/projects/components/project-avatar";
 
 import { Input } from "@/components/ui/input";
@@ -33,8 +31,6 @@ interface EditTaskFormProps{
 }
 
 export const EditTaskForm = ({ onCancel, projectOptions, memberOptions, initialValues }: EditTaskFormProps) => {
-    const workspaceId= useWorkspaceId();
-    const router = useRouter();
     const queryClient = useQueryClient();
 
     const { mutate, isPending } = useUpdateTask(); 

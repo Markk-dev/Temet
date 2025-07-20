@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertTriangle, Loader } from "lucide-react";
+import { Loader } from "lucide-react";
 
 const LoadingPage = () => {
     return(

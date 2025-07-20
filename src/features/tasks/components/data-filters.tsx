@@ -23,12 +23,12 @@ export const DataFilters =({ hideProjectFilter }: DataFiltersProp) => {
 
     const isLoading = isLoadingProjects || isLoadingMembers;
 
-    const projectOptions = projects?.documents.map((project) => ({
+    const projectOptions = projects?.documents.map((project: { $id: string; name: string }) => ({
         value: project.$id,
         label: project.name,
     }));
 
-    const memberOptions = members?.documents.map((member) => ({
+    const memberOptions = members?.documents.map((member: { $id: string; name: string }) => ({
         value: member.$id,
         label: member.name,
     }));
@@ -94,7 +94,7 @@ export const DataFilters =({ hideProjectFilter }: DataFiltersProp) => {
                     <SelectContent>
                         <SelectItem value="all">All assignees</SelectItem>
                         <SelectSeparator />
-                        {memberOptions?.map((member) => (
+                        {memberOptions?.map((member: { value: string; label: string }) => (
                             <SelectItem key={member.value} value={member.value}>
                                 {member.label}
                             </SelectItem>
@@ -102,37 +102,37 @@ export const DataFilters =({ hideProjectFilter }: DataFiltersProp) => {
                         
                     </SelectContent>
                 </Select>
-           
-                <Select
-                    defaultValue={projectId ?? undefined}
-                    onValueChange={(value) => onProjectChange(value)}
-                >
-                    <SelectTrigger className="w-full lg:w-auto h-8">
-                        <div className="flex items-center pr-2">
-                            <FolderIcon className="size-4 mr-2"/>
-                            <SelectValue placeholder="All projects"/>
-                        </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All projects</SelectItem>
-                        <SelectSeparator />
-                        {projectOptions?.map((project) => (
-                            <SelectItem key={project.value} value={project.value}>
-                                {project.label}
-                            </SelectItem>
-                        ))}
-                        
-                    </SelectContent>
-                </Select>
-            
-            <DatePicker
-                placeholder="Due date"
-                className="h-8 w-full lg:w-auto"
-                value={dueDate ? new Date(dueDate) : undefined}
-                onChange={(date) => {
-                    setFilters({dueDate: date ? date.toISOString() : null})
-                }}
-            />
+                {!hideProjectFilter && (
+                    <Select
+                        defaultValue={projectId ?? undefined}
+                        onValueChange={(value) => onProjectChange(value)}
+                    >
+                        <SelectTrigger className="w-full lg:w-auto h-8">
+                            <div className="flex items-center pr-2">
+                                <FolderIcon className="size-4 mr-2"/>
+                                <SelectValue placeholder="All projects"/>
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All projects</SelectItem>
+                            <SelectSeparator />
+                            {projectOptions?.map((project: { value: string; label: string }) => (
+                                <SelectItem key={project.value} value={project.value}>
+                                    {project.label}
+                                </SelectItem>
+                            ))}
+                            
+                        </SelectContent>
+                    </Select>
+                )}
+                <DatePicker
+                    placeholder="Due date"
+                    className="h-8 w-full lg:w-auto"
+                    value={dueDate ? new Date(dueDate) : undefined}
+                    onChange={(date) => {
+                        setFilters({dueDate: date ? date.toISOString() : null})
+                    }}
+                />
         </div>
     )
 };

@@ -81,7 +81,7 @@ export const DataKanban = ({
         // Find the task being moved
         const movedTask = task[sourceStatus][source.index];
         const isAssignee = movedTask?.assignees?.some(
-            (a: any) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
+            (a: { $id: string; userId?: string }) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
         );
         if (!isAssignee) {
             toast.error("Only assignees can move this task.");

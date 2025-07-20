@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 
-import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { ID } from "node-appwrite";
 import { setCookie, deleteCookie } from "hono/cookie";

@@ -10,9 +10,11 @@ import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 
 import { DottedSeparator } from "@/components/dotted-line";
 
+import { Member } from "@/features/members/types";
+
 interface EventCardProps {
     title: string;
-    assignee: any;
+    assignee: Member;
     project: Project;
     status: TaskStatus;
     id: string;

@@ -7,16 +7,6 @@ interface MemberAvatarProps {
   fallbackClassName?: string;
 }
 
-function isValidImageUrl(url: unknown): url is string {
-  if (typeof url !== "string") return false;
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export const MemberAvatar = ({
   name,
   className,

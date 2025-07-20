@@ -3,7 +3,7 @@ import  { TaskStatus } from "../types";
 
 import { snakeCaseToTitleCase } from "@/lib/utils";
 
-import {CircleCheckIcon, CircleDashedIcon, CircleDotDashedIcon, CircleDotIcon, CircleIcon, Plus, PlusIcon} from "lucide-react";
+import {CircleCheckIcon, CircleDashedIcon, CircleDotDashedIcon, CircleDotIcon, CircleIcon, PlusIcon} from "lucide-react";
 
 import { useCreateTaskModal } from "../hooks/use-create-task-modal";
 

@@ -10,7 +10,6 @@ import { useUpdateMember } from "@/features/members/api/use-update-member";
 import { useDeleteMember } from "@/features/members/api/use-delete-member";
 import { MemberAvatar } from "@/features/members/components/members-avatar";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
-import { useCurrent } from "@/features/auth/api/use-current";
 
 import { Button } from "@/components/ui/button";
 import { UseConfirm } from "@/hooks/use-confirm";

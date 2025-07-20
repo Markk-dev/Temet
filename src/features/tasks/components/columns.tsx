@@ -16,7 +16,22 @@ import { TaskActions } from "./task-actions";
 
 import { useCurrent } from "@/features/auth/api/use-current";
 
-type Member = { $id: string; name: string; /* other fields */ };
+type Member = { $id: string; name: string; userId?: string; /* other fields */ };
+
+// New component for the actions cell
+const TaskActionsCell = ({ id, projectId, assignees }: { id: string, projectId: string, assignees: Member[] }) => {
+  const { data: currentUser } = useCurrent();
+  const isAssignee = assignees?.some(
+    (a: Member) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
+  );
+  return (
+    <TaskActions id={id} projectId={projectId} disabled={!isAssignee}>
+      <Button variant="ghost" className="size-8 p-0">
+        <MoreVertical className="size-4"/>
+      </Button>
+    </TaskActions>
+  );
+};
 
 export const columns: ColumnDef<Task>[] = [
     {
@@ -150,18 +165,7 @@ export const columns: ColumnDef<Task>[] = [
             const id = row.original.$id;
             const projectId = row.original.projectId;
             const assignees = row.original.assignees;
-            const { data: currentUser } = useCurrent();
-            const isAssignee = assignees?.some(
-              (a: any) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
-            );
-            console.log("currentUser", currentUser, "assignees", assignees);
-            return (
-                <TaskActions id={id} projectId={projectId} disabled={!isAssignee}>
-                    <Button variant="ghost" className="size-8 p-0">
-                        <MoreVertical className="size-4"/>
-                    </Button>
-                </TaskActions>
-            )
+            return <TaskActionsCell id={id} projectId={projectId} assignees={assignees} />;
         }
     }
 ];

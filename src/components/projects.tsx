@@ -24,7 +24,7 @@ export const Projects = () => {
                 <p className="text-sm uppercase text-neutal-500"> Projects </p>
                 <RiAddCircleFill onClick={open} className="size-5 text-neutral-500 cursor-pointer hover:opacity-75 transition"/>
             </div>
-            {data?.documents.map((project) => {
+            {data?.documents.map((project: { $id: string; name: string; imageUrl?: string }) => {
                 const href = `/workspaces/${workspaceId}/projects/${project.$id}`;
                 const isActive = pathname === href;
 

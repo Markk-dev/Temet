@@ -9,6 +9,7 @@ import { WorkspaceAvatar } from "@/features/workspaces/components/workspace-avat
 import { useCreateWorkspaceModal } from "@/features/workspaces/hooks/use-create-workspace-modal";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Workspace } from "@/features/workspaces/types";
 
 export const WorkspaceSwitcher = () => {
 
@@ -33,7 +34,7 @@ export const WorkspaceSwitcher = () => {
             <SelectValue placeholder="No workspace selected" />
         </SelectTrigger>
         <SelectContent>
-            {workspaces?.documents.map((workspace) => (
+            {workspaces?.documents.map((workspace: { $id: string; name: string; imageUrl?: string }) => (
                 <SelectItem key={workspace.$id} value={workspace.$id}>
                     <div className="flex justify-start items-center gap-3 font-md ">
                         <WorkspaceAvatar name={workspace.name} image={workspace.imageUrl}/>

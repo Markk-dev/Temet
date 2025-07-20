@@ -5,8 +5,6 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { cn } from "@/lib/utils"
 import { Cross2Icon } from "@radix-ui/react-icons"
 
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
