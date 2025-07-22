@@ -9,7 +9,7 @@ import tasks from "@/features/tasks/server/route";
 
 const app = new Hono().basePath("/api");
 
-app 
+const router = app 
   .route("/auth", auth)
   .route("/workspaces", workspaces)
   .route("/members", members)
@@ -23,4 +23,4 @@ export const PATCH = handle(app);
 export const PUT = handle(app);     
 export const DELETE = handle(app);   
 
-export type AppType = typeof app;
+export type AppType = typeof router;

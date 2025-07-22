@@ -5,8 +5,8 @@ import { client } from "@/lib/rpc";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-type ResponseType = InferResponseType<(typeof client as any).api.auth.login["$post"]>;
-type RequestType  = InferRequestType<(typeof client as any).api.auth.login["$post"]>;
+type ResponseType = InferResponseType<typeof client.api.auth.login["$post"]>;
+type RequestType  = InferRequestType<typeof client.api.auth.login["$post"]>;
 
 
 export const useLogin = () => {
@@ -18,7 +18,7 @@ export const useLogin = () => {
         RequestType
     >({
         mutationFn: async ({ json }) => {
-            const response = await (client as any).api.auth.login["$post"]({ json});
+            const response = await client.api.auth.login["$post"]({ json});
 
             if(!response.ok){
                 throw new Error("Failed to login");
