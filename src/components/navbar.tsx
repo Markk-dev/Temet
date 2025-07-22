@@ -13,7 +13,7 @@ const pathnameMap = {
   },
   "projects": {
     title: "My Project",
-    description: "View and manage tasks projects", 
+    description: "View and manage tasks projects here", 
   },
 }
 

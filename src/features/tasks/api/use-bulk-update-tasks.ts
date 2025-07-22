@@ -24,6 +24,8 @@ export const useBulkUpdateTasks = () => {
     onSuccess: () => {
       toast.success("Tasks updated");
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["workspace-analytics"] });
+      queryClient.invalidateQueries({ queryKey: ["project-analytics"] });
     },
     onError: () => {
       toast.error("Failed to update tasks");
