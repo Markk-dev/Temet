@@ -68,20 +68,36 @@ export const CreateTaskForm = ({ onCancel, projectOptions, memberOptions }: Crea
                             <FormField
                                 control={form.control}
                                 name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            Task Name
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input 
-                                                {...field}
-                                                placeholder="Enter task name"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                )}
+                                render={({ field }) => {
+                                    const charCount = field.value?.length || 0;
+                                    const isNearLimit = charCount >= 50;
+                                    return (
+                                        <FormItem>
+                                            <FormLabel>
+                                                Task Name
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input 
+                                                    {...field}
+                                                    placeholder="Enter task name"
+                                                    maxLength={60}
+                                                />
+                                            </FormControl>
+                                            <div className="flex justify-end mt-1">
+                                                <span
+                                                    className={cn(
+                                                        "text-xs transition-all duration-200 ease-in transform",
+                                                        charCount === 0 ? "opacity-0 translate-y-[-8px] pointer-events-none" : "opacity-100 translate-y-0",
+                                                        isNearLimit ? "text-red-500" : "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    {charCount}/60
+                                                </span>
+                                            </div>
+                                            <FormMessage/>
+                                        </FormItem>
+                                    );
+                                }}
                             />
                             <FormField
                                 control={form.control}

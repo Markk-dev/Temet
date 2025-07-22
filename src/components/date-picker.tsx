@@ -17,6 +17,9 @@ interface DatePickerProps {
 };
 
 export const DatePicker = ({ value, onChange, className, placeholder = "Select date" }: DatePickerProps) => {
+    // Get today with time set to 00:00:00 for accurate comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -31,6 +34,7 @@ export const DatePicker = ({ value, onChange, className, placeholder = "Select d
                     selected={value}
                     onSelect={(date) => onChange(date as Date)}
                     initialFocus
+                    disabled={{ before: today }}
                 />
             </PopoverContent>
         </Popover>

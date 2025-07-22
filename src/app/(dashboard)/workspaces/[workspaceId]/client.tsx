@@ -23,7 +23,9 @@ import { ProjectAvatar } from "@/features/projects/components/project-avatar";
 import { Member } from "@/features/members/types";
 import { MemberAvatar } from "@/features/members/components/members-avatar";
 import { snakeCaseToTitleCase } from "@/lib/utils";
+
 import { Badge } from "@/components/ui/badge";
+import { HomeBadge } from "@/components/home-badge";
 
 export const WorkspaceIdClient = () => {
     const workspaceId = useWorkspaceId();
@@ -80,13 +82,13 @@ export const TaskList = ({ data, total }: TasklistProps) => {
                     <PlusIcon className="size-4 text-neutral-400"/>
                 </Button>
               </div>
-              <DottedSeparator className="my-4"/>
+              <DottedSeparator className="my-3"/>
               <ul
                 className={`
                   flex flex-col gap-y-4 max-h-72 overflow-y-auto pr-2
                   task-scrollbar
                 `}
-                style={{ minHeight: "120px" }} // optional, for consistent look
+                style={{ minHeight: "120px" }}
               >
                {data.map((task) => (
                 <li key={task.$id}>
@@ -105,9 +107,9 @@ export const TaskList = ({ data, total }: TasklistProps) => {
                                     <p className="text-xs">{task.project?.name}</p>
                                 </div>
                                 <div className="size-1 rounded-full bg-neutral-300"/>
-                                <Badge variant={task.status}>
+                                <HomeBadge variant={task.status}>
                                     {snakeCaseToTitleCase(task.status)}
-                                </Badge>
+                                </HomeBadge>
                                 <div className="text-sm text-muted-foreground flex items-center">
                                     <CalendarIcon className="size-3 mr-1"/>
                                     <span className="truncate">
@@ -154,7 +156,7 @@ export const ProjectList = ({ data, total }: ProjectlistProps) => {
                     <PlusIcon className="size-4 text-neutral-400"/>
                 </Button>
               </div>
-              <DottedSeparator className="my-4"/>
+              <DottedSeparator className="my-3"/>
               <ul className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                {data.map((project) => (
                 <li key={project.$id}>
@@ -206,7 +208,7 @@ export const MembersList = ({ data, total }: MemberslistProps) => {
                     </Link>
                 </Button>
               </div>
-              <DottedSeparator className="my-4"/>
+              <DottedSeparator className="my-3"/>
               <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                {data.map((member) => (
                 <li key={member.$id}>

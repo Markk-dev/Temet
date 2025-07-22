@@ -50,7 +50,7 @@ export const columns: ColumnDef<Task>[] = [
           cell: ({row}) => {
             const name = row.original.name;
 
-            return <p className="line-clamp-1">{name}</p>
+            return <p className="break-words whitespace-pre-line max-w-xs">{name}</p>
           }
     },
     {
