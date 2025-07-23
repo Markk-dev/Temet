@@ -24,7 +24,6 @@ import { Member } from "@/features/members/types";
 import { MemberAvatar } from "@/features/members/components/members-avatar";
 import { snakeCaseToTitleCase } from "@/lib/utils";
 
-import { Badge } from "@/components/ui/badge";
 import { HomeBadge } from "@/components/home-badge";
 
 export const WorkspaceIdClient = () => {

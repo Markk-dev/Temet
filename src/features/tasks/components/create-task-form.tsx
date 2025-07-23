@@ -72,17 +72,17 @@ export const CreateTaskForm = ({ onCancel, projectOptions, memberOptions }: Crea
                                     const charCount = field.value?.length || 0;
                                     const isNearLimit = charCount >= 50;
                                     return (
-                                        <FormItem>
-                                            <FormLabel>
-                                                Task Name
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input 
-                                                    {...field}
-                                                    placeholder="Enter task name"
+                                    <FormItem>
+                                        <FormLabel>
+                                            Task Name
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input 
+                                                {...field}
+                                                placeholder="Enter task name"
                                                     maxLength={60}
-                                                />
-                                            </FormControl>
+                                            />
+                                        </FormControl>
                                             <div className="flex justify-end mt-1">
                                                 <span
                                                     className={cn(
@@ -94,8 +94,8 @@ export const CreateTaskForm = ({ onCancel, projectOptions, memberOptions }: Crea
                                                     {charCount}/60
                                                 </span>
                                             </div>
-                                            <FormMessage/>
-                                        </FormItem>
+                                        <FormMessage/>
+                                    </FormItem>
                                     );
                                 }}
                             />
