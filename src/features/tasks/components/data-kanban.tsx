@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useState } from "react";
 import { Task, TaskStatus } from "../types";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
@@ -7,6 +6,8 @@ import { KanbanCard } from "./kanban-card";
 
 import { useCurrent } from "@/features/auth/api/use-current";
 import { toast } from "sonner";
+import Pusher from 'pusher-js';
+import { useQueryClient } from "@tanstack/react-query";
 
 const boards: TaskStatus[] =[
     TaskStatus.BACKLOG,
@@ -50,26 +51,98 @@ export const DataKanban = ({
     });
 
     const { data: currentUser } = useCurrent();
+    const queryClient = useQueryClient();
 
+    // Real-time Pusher integration
     useEffect(() => {
-        const newTasks: TasksState = {
-            [TaskStatus.BACKLOG]: [],
-            [TaskStatus.TODO]: [],
-            [TaskStatus.IN_PROGRESS]: [],
-            [TaskStatus.IN_REVIEW]: [],
-            [TaskStatus.DONE]: [],
+        // Only run on client
+        if (typeof window === 'undefined') return;
+        const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
+        const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
+        if (!pusherKey || !pusherCluster) return;
+
+        const pusher = new Pusher(pusherKey, {
+            cluster: pusherCluster,
+        });
+        const channel = pusher.subscribe('tasks');
+
+        // Helper to update state for a single task
+        const upsertTask = (newTask: Task) => {
+            setTasks(prev => {
+                // Remove from all columns
+                const updated: TasksState = { ...prev };
+                (Object.keys(updated) as TaskStatus[]).forEach(status => {
+                    updated[status] = updated[status].filter(t => t.$id !== newTask.$id);
+                });
+                // Add to correct column
+                updated[newTask.status] = [...updated[newTask.status], newTask];
+                // Sort
+                updated[newTask.status].sort((a, b) => a.position - b.position);
+                return { ...updated };
+            });
+        };
+        // Helper to remove a task
+        const removeTask = (taskId: string) => {
+            setTasks(prev => {
+                const updated: TasksState = { ...prev };
+                (Object.keys(updated) as TaskStatus[]).forEach(status => {
+                    updated[status] = updated[status].filter(t => t.$id !== taskId);
+                });
+                return { ...updated };
+            });
+        };
+        // Helper to bulk update tasks
+        const bulkUpdateTasks = (tasks: Task[]) => {
+            setTasks(prev => {
+                // Remove all updated tasks from all columns
+                const updated: TasksState = { ...prev };
+                const updatedIds = new Set(tasks.map(t => t.$id));
+                (Object.keys(updated) as TaskStatus[]).forEach(status => {
+                    updated[status] = updated[status].filter(t => !updatedIds.has(t.$id));
+                });
+                // Add each updated task to its new column
+                tasks.forEach(task => {
+                    updated[task.status] = [...updated[task.status], task];
+                });
+                // Sort each column
+                (Object.keys(updated) as TaskStatus[]).forEach(status => {
+                    updated[status].sort((a, b) => a.position - b.position);
+                });
+                return { ...updated };
+            });
         };
 
-        data.forEach((task) => {
-            newTasks[task.status].push(task);
+        channel.bind('task-created', (data: { task: Task }) => {
+            if (data && data.task) upsertTask(data.task);
+            queryClient.invalidateQueries({ queryKey: ["tasks"] });
+            queryClient.invalidateQueries({ queryKey: ["workspace-analytics"] });
+            queryClient.invalidateQueries({ queryKey: ["project-analytics"] });
+        });
+        channel.bind('task-updated', (data: { task: Task }) => {
+            if (data && data.task) upsertTask(data.task);
+            queryClient.invalidateQueries({ queryKey: ["tasks"] });
+            queryClient.invalidateQueries({ queryKey: ["workspace-analytics"] });
+            queryClient.invalidateQueries({ queryKey: ["project-analytics"] });
+        });
+        channel.bind('task-deleted', (data: { taskId: string }) => {
+            if (data && data.taskId) removeTask(data.taskId);
+            queryClient.invalidateQueries({ queryKey: ["tasks"] });
+            queryClient.invalidateQueries({ queryKey: ["workspace-analytics"] });
+            queryClient.invalidateQueries({ queryKey: ["project-analytics"] });
+        });
+        channel.bind('tasks-bulk-updated', (data: { tasks: Task[] }) => {
+            if (data && Array.isArray(data.tasks)) bulkUpdateTasks(data.tasks);
+            queryClient.invalidateQueries({ queryKey: ["tasks"] });
+            queryClient.invalidateQueries({ queryKey: ["workspace-analytics"] });
+            queryClient.invalidateQueries({ queryKey: ["project-analytics"] });
         });
 
-        Object.keys(newTasks).forEach((status) => {
-            newTasks[status as TaskStatus].sort((a,  b) => a.position - b.position)
-        });
-
-        setTasks(newTasks);
-    }, [data])
+        return () => {
+            channel.unbind_all();
+            channel.unsubscribe();
+            pusher.disconnect();
+        };
+    }, []);
     
     const onDragEnd = useCallback((result: DropResult) => {
         if(!result.destination) return;

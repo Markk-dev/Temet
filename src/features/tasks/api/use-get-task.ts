@@ -52,6 +52,8 @@ export const useGetTasks = ({
             
             return data;
         },
+        refetchOnWindowFocus: true,
+        refetchInterval: 2000,
     });
 
     return query;

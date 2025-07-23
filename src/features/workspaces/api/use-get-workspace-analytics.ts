@@ -27,6 +27,8 @@ export const useGetWorkspaceAnalytics = ({
             
             return data;
         },
+        refetchOnWindowFocus: true,
+        refetchInterval: 2000,
     });
 
     return query;

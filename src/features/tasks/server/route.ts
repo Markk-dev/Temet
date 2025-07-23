@@ -45,15 +45,44 @@ const app = new Hono()
             return c.json({error: "Unathorized"}, 401);
         }
 
+        // Enrich with assignees and project before delete
+        const { users } = await createAdminClient();
+        const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
+        const members = await databases.listDocuments(
+            DATABASE_ID,
+            MEMBERS_ID,
+            assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
+        );
+        const assignees = await Promise.all(
+            members.documents.map(async (member) => {
+                const user = await users.get(member.userId);
+                return {
+                    ...member,
+                    name: user.name || user.email,
+                    email: user.email,
+                };
+            })
+        );
+        let project = null;
+        if (task.projectId) {
+            try {
+                project = await databases.getDocument(
+                    DATABASE_ID,
+                    PROJECTS_ID,
+                    task.projectId
+                );
+            } catch {}
+        }
+
         await databases.deleteDocument(
             DATABASE_ID,
             TASKS_ID,
             taskId,
         );
 
-        await pusher.trigger("tasks", "task-deleted", { taskId });
+        await pusher.trigger("tasks", "task-deleted", { taskId, task: { ...task, assignees, project } });
 
-        return c.json({data: {$id: task.$id} });
+        return c.json({data: { $id: task.$id} });
     }
   )
   .get(
@@ -237,9 +266,37 @@ const app = new Hono()
             },
         );
 
-        await pusher.trigger("tasks", "task-created", { task });
+        // Enrich with assignees and project
+        const { users } = await createAdminClient();
+        const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
+        const members = await databases.listDocuments(
+            DATABASE_ID,
+            MEMBERS_ID,
+            assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
+        );
+        const assignees = await Promise.all(
+            members.documents.map(async (member) => {
+                const user = await users.get(member.userId);
+                return {
+                    ...member,
+                    name: user.name || user.email,
+                    email: user.email,
+                };
+            })
+        );
+        let project = null;
+        if (task.projectId) {
+            try {
+                project = await databases.getDocument(
+                    DATABASE_ID,
+                    PROJECTS_ID,
+                    task.projectId
+                );
+            } catch {}
+        }
+        await pusher.trigger("tasks", "task-created", { task: { ...task, assignees, project } });
 
-        return c.json({data: task})
+        return c.json({data: { ...task, assignees, project }})
     }
   )
   .patch(
@@ -290,9 +347,37 @@ const app = new Hono()
             },
         );
 
-        await pusher.trigger("tasks", "task-updated", { task });
+        // Enrich with assignees and project
+        const { users } = await createAdminClient();
+        const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
+        const members = await databases.listDocuments(
+            DATABASE_ID,
+            MEMBERS_ID,
+            assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
+        );
+        const assignees = await Promise.all(
+            members.documents.map(async (member) => {
+                const user = await users.get(member.userId);
+                return {
+                    ...member,
+                    name: user.name || user.email,
+                    email: user.email,
+                };
+            })
+        );
+        let project = null;
+        if (task.projectId) {
+            try {
+                project = await databases.getDocument(
+                    DATABASE_ID,
+                    PROJECTS_ID,
+                    task.projectId
+                );
+            } catch {}
+        }
+        await pusher.trigger("tasks", "task-updated", { task: { ...task, assignees, project } });
 
-        return c.json({data: task})
+        return c.json({data: { ...task, assignees, project }})
     }
   )
   .get(
@@ -423,7 +508,42 @@ const app = new Hono()
           })
         );
         
-        await pusher.trigger("tasks", "tasks-bulk-updated", { tasks: updatedTasks });
+        // Fetch assignees and project for each updated task
+        const { users } = await createAdminClient();
+        const allProjectIds = Array.from(new Set(updatedTasks.map(task => task.projectId)));
+        const projectsList = allProjectIds.length > 0 ? await databases.listDocuments(
+            DATABASE_ID,
+            PROJECTS_ID,
+            [Query.contains("$id", allProjectIds)]
+        ) : { documents: [] };
+        const assigneeIds = updatedTasks.flatMap(task => Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId]);
+        const members = await databases.listDocuments(
+            DATABASE_ID,
+            MEMBERS_ID,
+            assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
+        );
+        const assigneesList = await Promise.all(
+            members.documents.map(async (member) => {
+                const user = await users.get(member.userId);
+                return {
+                    ...member,
+                    name: user.name || user.email,
+                    email: user.email,
+                };
+            })
+        );
+        const populatedTasks = updatedTasks.map((task) => {
+            const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
+            const assignees = assigneesList.filter((assignee) => assigneeIds.includes(assignee.$id));
+            const project = projectsList.documents.find((p) => p.$id === task.projectId) || null;
+            return {
+                ...task,
+                assignees,
+                project,
+            };
+        });
+
+        await pusher.trigger("tasks", "tasks-bulk-updated", { tasks: populatedTasks });
 
         return c.json({ data: updatedTasks });
     }
