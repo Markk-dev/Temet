@@ -246,6 +246,17 @@ const app = new Hono()
         ? highestPositionTask.documents[0].position + 1000
         : 1000;
 
+        
+        let initialTimeLogs = "[]";
+        if (status === TaskStatus.IN_PROGRESS) {
+            const timeLog = {
+                id: crypto.randomUUID(),
+                started_at: new Date().toISOString(),
+                
+            };
+            initialTimeLogs = JSON.stringify([timeLog]);
+        }
+
         const task = await databases.createDocument(
             DATABASE_ID,
             TASKS_ID,
@@ -257,11 +268,14 @@ const app = new Hono()
                 projectId,
                 dueDate,
                 assigneeId,
-                position: newPosition
+                position: newPosition,
+                totalTimeSpent: 0,
+                timeLogs: initialTimeLogs,
+                lastActiveAt: new Date().toISOString()
             },
         );
 
-        // Enrich with assignees and project
+        
         const { users } = await createAdminClient();
         const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
         const members = await databases.listDocuments(
@@ -328,6 +342,46 @@ const app = new Hono()
             return c.json({error: "Unauthorized"}, 401)
         }
 
+        
+        let updatedTimeLogs: any[] = [];
+        try {
+            const timeLogsString = existingTask.timeLogs as string;
+            updatedTimeLogs = timeLogsString ? JSON.parse(timeLogsString) : [];
+        } catch {
+            updatedTimeLogs = [];
+        }
+
+        const currentTime = new Date().toISOString();
+        const oldStatus = existingTask.status;
+        const newStatus = status;
+
+        
+        if (newStatus && newStatus !== oldStatus) {
+            
+            if (newStatus === TaskStatus.IN_PROGRESS) {
+                
+                const openLogIndex = updatedTimeLogs.findIndex((log: any) => !log.ended_at);
+                if (openLogIndex >= 0) {
+                    updatedTimeLogs[openLogIndex].ended_at = currentTime;
+                }
+                
+                
+                updatedTimeLogs.push({
+                    id: crypto.randomUUID(),
+                    started_at: currentTime,
+                    
+                });
+            }
+            
+            
+            else if (oldStatus === TaskStatus.IN_PROGRESS) {
+                const openLogIndex = updatedTimeLogs.findIndex((log: any) => !log.ended_at);
+                if (openLogIndex >= 0) {
+                    updatedTimeLogs[openLogIndex].ended_at = currentTime;
+                }
+            }
+        }
+
         const task = await databases.updateDocument<Task>(
             DATABASE_ID,
             TASKS_ID,
@@ -339,10 +393,11 @@ const app = new Hono()
                 dueDate,
                 assigneeId,
                 description,
+                timeLogs: JSON.stringify(updatedTimeLogs), 
             },
         );
 
-        // Enrich with assignees and project
+        
         const { users } = await createAdminClient();
         const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
         const members = await databases.listDocuments(
@@ -492,15 +547,63 @@ const app = new Hono()
         };
 
         const updatedTasks = await Promise.all(
-            tasks.map(async (task) => {
-            const { $id, status, position } = task;
-            return databases.updateDocument(
-                DATABASE_ID,
-                TASKS_ID,
-                $id,
-                { status, position } 
-            );
-          })
+            tasks.map(async (taskUpdate) => {
+                const { $id, status, position } = taskUpdate;
+                
+                
+                const existingTask = await databases.getDocument<Task>(DATABASE_ID, TASKS_ID, $id);
+                
+                
+                let updatedTimeLogs: any[] = [];
+                try {
+                    const timeLogsString = existingTask.timeLogs as string;
+                    updatedTimeLogs = timeLogsString ? JSON.parse(timeLogsString) : [];
+                } catch {
+                    updatedTimeLogs = [];
+                }
+
+                const currentTime = new Date().toISOString();
+                const oldStatus = existingTask.status;
+                const newStatus = status;
+
+                
+                if (newStatus && newStatus !== oldStatus) {
+                    
+                    if (newStatus === TaskStatus.IN_PROGRESS) {
+                        
+                        const openLogIndex = updatedTimeLogs.findIndex((log: any) => !log.ended_at);
+                        if (openLogIndex >= 0) {
+                            updatedTimeLogs[openLogIndex].ended_at = currentTime;
+                        }
+                        
+                        
+                        updatedTimeLogs.push({
+                            id: crypto.randomUUID(),
+                            started_at: currentTime,
+                            
+                        });
+                    }
+                    
+                    
+                    else if (oldStatus === TaskStatus.IN_PROGRESS) {
+                        const openLogIndex = updatedTimeLogs.findIndex((log: any) => !log.ended_at);
+                        if (openLogIndex >= 0) {
+                            updatedTimeLogs[openLogIndex].ended_at = currentTime;
+                        }
+                    }
+                }
+
+                return databases.updateDocument(
+                    DATABASE_ID,
+                    TASKS_ID,
+                    $id,
+                    { 
+                        status, 
+                        position,
+                        timeLogs: JSON.stringify(updatedTimeLogs) 
+                    } 
+                );
+            })
         );
         
 

@@ -24,14 +24,26 @@ import { Project } from "@/features/projects/types";
 import { ProjectAvatar } from "@/features/projects/components/project-avatar";
 import { Member } from "@/features/members/types";
 import { MemberAvatar } from "@/features/members/components/members-avatar";
+import { MemberTimeAnalytics } from "@/features/tasks/components/member-time-analytics";
 import { snakeCaseToTitleCase } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 import { HomeBadge } from "@/components/home-badge";
+import React from "react";
 
 export const WorkspaceIdClient = () => {
     const workspaceId = useWorkspaceId();
     
+    // Initialize prefetch and pusher hooks
+    const { prefetchWorkspaceData } = usePrefetchData();
     usePusherAnalytics();
+    
+    // Prefetch data on component mount for better performance
+    React.useEffect(() => {
+        if (workspaceId) {
+            prefetchWorkspaceData(workspaceId);
+        }
+    }, [workspaceId, prefetchWorkspaceData]);
     
     const { data: analytics, isLoading: isLoadingAnalytics } = useGetWorkspaceAnalytics({ workspaceId })
     const { data: tasks, isLoading: isLoadingTasks } = useGetTasks({ workspaceId })
@@ -55,6 +67,12 @@ export const WorkspaceIdClient = () => {
     return (
         <div className="h-full flex flex-col space-y-4">
             <Analytics data={analytics}/>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <MemberTimeAnalytics />
+                <div className="bg-muted/50 rounded-lg border-2 border-dashed border-muted-foreground/25 p-4 flex items-center justify-center">
+                    <p className="text-muted-foreground text-sm">Space for another chart</p>
+                </div>
+            </div>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 <TaskList data={tasks.documents} total={tasks.total}/>
                 <div className="flex flex-col gap-4">
@@ -88,10 +106,19 @@ export const TaskList = ({ data, total }: TasklistProps) => {
               </div>
               <DottedSeparator className="my-3"/>
               <ul
-                className={`
-                  flex flex-col gap-y-4 max-h-72 overflow-y-auto pr-2
-                  task-scrollbar
-                `}
+                className={cn(
+                  "flex flex-col gap-y-4 max-h-72 pr-2",
+                  data.length > 4 ? "overflow-y-scroll" : "overflow-hidden",
+                  // Slim greyish scrollbar styling - matches Projects/Members
+                  "[&::-webkit-scrollbar]:w-2",
+                  "[&::-webkit-scrollbar-track]:bg-gray-100",
+                  "[&::-webkit-scrollbar-thumb]:bg-gray-300",
+                  "[&::-webkit-scrollbar-thumb]:rounded-full",
+                  "[&::-webkit-scrollbar-thumb:hover]:bg-gray-400",
+                  // Firefox scrollbar
+                  "scrollbar-width:thin",
+                  "scrollbar-color:rgb(209 213 219) rgb(243 244 246)"
+                )}
                 style={{ minHeight: "120px" }}
               >
                {data.map((task) => (
@@ -104,7 +131,7 @@ export const TaskList = ({ data, total }: TasklistProps) => {
                                 <div className="flex py-2 justify-center items-center gap-x-1">
                                     <ProjectAvatar
                                          className="size-5"
-                                         fallbackClassName="text-lg"
+                                         fallbackClassName="text-sm"
                                          name={task.project?.name ?? ""}
                                          image={task.project?.imageUrl}
                                     />
@@ -116,8 +143,8 @@ export const TaskList = ({ data, total }: TasklistProps) => {
                                 </HomeBadge>
                                 <div className="text-sm text-muted-foreground flex items-center">
                                     <CalendarIcon className="size-3 mr-1"/>
-                                    <span className="truncate">
-                                        {formatDistanceToNow(new Date(task.dueDate))}
+                                    <span className="truncate text-xs">
+                                        {formatDistanceToNow(new Date(task.$createdAt))} ago
                                     </span>
                                 </div>
                             </div>
@@ -153,7 +180,7 @@ export const ProjectList = ({ data, total }: ProjectlistProps) => {
         <div className="flex flex-col gap-y-4 col-span-1">
            <div className="bg-white border rounded-lg p-4">
               <div className="flex items-center justify-between">
-                <p className="text-lg font-semibold">
+                <p className="text-sm font-semibold">
                     Projects ({total})
                 </p>
                 <Button variant="secondary" size="icon" onClick={createProject}>
@@ -161,31 +188,45 @@ export const ProjectList = ({ data, total }: ProjectlistProps) => {
                 </Button>
               </div>
               <DottedSeparator className="my-3"/>
-              <ul className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-               {data.map((project) => (
-                <li key={project.$id}>
-                  <Link href={`/workspaces/${workspaceId}/projects/${project.$id}`}>
-                    <Card className="shadow-none rouded-lg hover:opacity-75 transition">
-                        <CardContent className="p-4 flex items-center gap-x-2.5">
-                            <ProjectAvatar 
-                                className="size-12"
-                                fallbackClassName="text-lg"
-                                name={project.name}
-                                image={project.imageUrl}
-                            />
-                            <p className="text-lg font-medium truncate">
-                                {project.name}
-                            </p>
+              <div className={cn(
+                "pr-2",
+                data.length > 6 ? "max-h-32 overflow-y-scroll" : "overflow-hidden",
+                // Slim greyish scrollbar styling
+                "[&::-webkit-scrollbar]:w-2",
+                "[&::-webkit-scrollbar-track]:bg-gray-100",
+                "[&::-webkit-scrollbar-thumb]:bg-gray-300",
+                "[&::-webkit-scrollbar-thumb]:rounded-full",
+                "[&::-webkit-scrollbar-thumb:hover]:bg-gray-400",
+                // Firefox scrollbar
+                "scrollbar-width:thin",
+                "scrollbar-color:rgb(209 213 219) rgb(243 244 246)"
+              )}>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                 {data.map((project) => (
+                  <li key={project.$id}>
+                    <Link href={`/workspaces/${workspaceId}/projects/${project.$id}`}>
+                      <Card className="shadow-none rouded-lg hover:opacity-75 transition">
+                          <CardContent className="p-2 flex items-center gap-x-2.5">
+                              <ProjectAvatar 
+                                  className="size-10"
+                                  fallbackClassName="text-xl"
+                                  name={project.name}
+                                  image={project.imageUrl}
+                              />
+                              <p className="text-sm font-medium truncate">
+                                  {project.name}
+                              </p>
 
-                        </CardContent>
-                    </Card>
-                  </Link>
-                </li>
-               ))}
-               <li className="text-sm text-muted-foreground text-center hidden first-of-type:block">
-                No projects found
-               </li>
-              </ul>
+                          </CardContent>
+                      </Card>
+                    </Link>
+                  </li>
+                 ))}
+                 <li className="text-sm text-muted-foreground text-center hidden first-of-type:block">
+                  No projects found
+                 </li>
+                </ul>
+              </div>
            </div>
         </div>
     )
@@ -213,32 +254,46 @@ export const MembersList = ({ data, total }: MemberslistProps) => {
                 </Button>
               </div>
               <DottedSeparator className="my-3"/>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-               {data.map((member) => (
-                <li key={member.$id}>
-                    <Card className="shadow-none rouded-lg overflow-hidden">
-                        <CardContent className="p-3 flex flex-col items-center gap-x-2">
-                            <MemberAvatar 
-                                className="size-12"
-                                name={member.name}
-                            />
-                            <div className="flex flex-col items-center overflow-hidden">
-                                <p className="text-lg font-medium truncate line-clamp-1">
-                                    {member.name}
-                                </p>
-                                <p className="text-sm text-muted-foreground truncate line-clamp-1">
-                                    {member.email}
-                                </p>
+              <div className={cn(
+                "pr-2",
+                data.length > 6 ? "max-h-32 overflow-y-scroll" : "overflow-hidden",
+                // Slim greyish scrollbar styling
+                "[&::-webkit-scrollbar]:w-2",
+                "[&::-webkit-scrollbar-track]:bg-gray-100",
+                "[&::-webkit-scrollbar-thumb]:bg-gray-300",
+                "[&::-webkit-scrollbar-thumb]:rounded-full",
+                "[&::-webkit-scrollbar-thumb:hover]:bg-gray-400",
+                // Firefox scrollbar
+                "scrollbar-width:thin",
+                "scrollbar-color:rgb(209 213 219) rgb(243 244 246)"
+              )}>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                 {data.map((member) => (
+                  <li key={member.$id}>
+                      <Card className="shadow-none rouded-lg overflow-hidden">
+                          <CardContent className="p-3 flex flex-col items-center gap-x-2">
+                              <MemberAvatar 
+                                  className="size-12"
+                                  name={member.name}
+                              />
+                              <div className="flex flex-col items-center overflow-hidden">
+                                  <p className="text-lg font-medium truncate line-clamp-1">
+                                      {member.name}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground truncate line-clamp-1">
+                                      {member.email}
+                                  </p>
 
-                            </div>
-                        </CardContent>
-                    </Card>
-                </li>
-               ))}
-               <li className="text-sm text-muted-foreground text-center hidden first-of-type:block">
-                No members found
-               </li>
-              </ul>
+                              </div>
+                          </CardContent>
+                      </Card>
+                  </li>
+                 ))}
+                 <li className="text-sm text-muted-foreground text-center hidden first-of-type:block">
+                  No members found
+                 </li>
+                </ul>
+              </div>
            </div>
         </div>
     )

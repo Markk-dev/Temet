@@ -2,9 +2,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { client } from '@/lib/rpc';
 
-/**
- * Hook for prefetching data to improve navigation performance
- */
 export const usePrefetchData = () => {
   const queryClient = useQueryClient();
 
@@ -23,6 +20,20 @@ export const usePrefetchData = () => {
           return data;
         },
         staleTime: 30000, // Consider fresh for 30 seconds
+      }),
+
+      // Prefetch member time analytics
+      queryClient.prefetchQuery({
+        queryKey: ["member-time-analytics", workspaceId],
+        queryFn: async () => {
+          const response = await client.api.analytics["member-time"].$get({
+            query: { workspaceId },
+          });
+          if (!response.ok) throw new Error("Failed to fetch member time analytics");
+          const { data } = await response.json();
+          return data;
+        },
+        staleTime: 30000,
       }),
 
       // Prefetch tasks
