@@ -15,11 +15,6 @@ import { createAdminClient } from "@/lib/appwrite";
 import { SessionMiddleware } from "@/lib/session-middleware";
 import { pusher } from "@/lib/pusher";
 
-
-// TODO: will add storage per workspace later
-// TODO: will add messaging feature per workspace later
-// TODO: will add comment feature per workspace later
-
 const app = new Hono()
   .delete(
     "/:taskId",
@@ -45,7 +40,7 @@ const app = new Hono()
             return c.json({error: "Unathorized"}, 401);
         }
 
-        // Enrich with assignees and project before delete
+
         const { users } = await createAdminClient();
         const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
         const members = await databases.listDocuments(
@@ -431,7 +426,7 @@ const app = new Hono()
                 })
             );
 
-            // If you want a single object when only one assignee:
+
             const assigneeResult = assigneeIds.length === 1 ? assignee[0] : assignee;
 
             return c.json({
@@ -445,7 +440,7 @@ const app = new Hono()
             if (err.code === 404) {
                 return c.json({ error: "Task not found" }, 404);
             }
-            throw err; // Let other errors bubble up
+            throw err; 
         }
     }
   )
@@ -508,7 +503,7 @@ const app = new Hono()
           })
         );
         
-        // Fetch assignees and project for each updated task
+
         const { users } = await createAdminClient();
         const allProjectIds = Array.from(new Set(updatedTasks.map(task => task.projectId)));
         const projectsList = allProjectIds.length > 0 ? await databases.listDocuments(

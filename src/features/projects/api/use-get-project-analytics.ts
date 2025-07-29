@@ -27,8 +27,8 @@ export const useGetProjectAnalytics = ({
             
             return data;
         },
-        refetchOnWindowFocus: true,
-        refetchInterval: 2000,
+        refetchOnWindowFocus: false,
+
     });
 
     return query;

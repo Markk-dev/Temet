@@ -11,6 +11,7 @@ import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 import { useCreateTaskModal } from "@/features/tasks/hooks/use-create-task-modal";
 import { useCreateProjectModal } from "@/features/projects/hooks/use-create-project-modal";
 import { useGetWorkspaceAnalytics } from "@/features/workspaces/api/use-get-workspace-analytics";
+import { usePusherAnalytics } from "@/hooks/use-pusher-analytics";
 
 import { Button } from "@/components/ui/button";
 import { Analytics } from "@/components/analytics";
@@ -28,6 +29,9 @@ import { HomeBadge } from "@/components/home-badge";
 
 export const WorkspaceIdClient = () => {
     const workspaceId = useWorkspaceId();
+    
+    usePusherAnalytics();
+    
     const { data: analytics, isLoading: isLoadingAnalytics } = useGetWorkspaceAnalytics({ workspaceId })
     const { data: tasks, isLoading: isLoadingTasks } = useGetTasks({ workspaceId })
     const { data: projects, isLoading: isLoadingProjects } = useGetProjects({ workspaceId })

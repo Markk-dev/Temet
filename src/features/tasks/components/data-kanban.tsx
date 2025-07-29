@@ -59,12 +59,35 @@ export const DataKanban = ({
         if (typeof window === 'undefined') return;
         const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
         const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
-        if (!pusherKey || !pusherCluster) return;
+        
+        if (!pusherKey || !pusherCluster) {
+            console.warn('Pusher configuration missing. Real-time updates disabled.');
+            return;
+        }
 
         const pusher = new Pusher(pusherKey, {
             cluster: pusherCluster,
+            enabledTransports: ['ws', 'wss'],
         });
+        
+        // Add connection event listeners
+        pusher.connection.bind('connected', () => {
+            console.log('✅ Pusher connected successfully');
+        });
+        
+        pusher.connection.bind('error', (err: any) => {
+            console.error('❌ Pusher connection error:', err);
+        });
+        
         const channel = pusher.subscribe('tasks');
+        
+        channel.bind('pusher:subscription_succeeded', () => {
+            console.log('✅ Successfully subscribed to tasks channel');
+        });
+        
+        channel.bind('pusher:subscription_error', (err: any) => {
+            console.error('❌ Failed to subscribe to tasks channel:', err);
+        });
 
         // Helper to update state for a single task
         const upsertTask = (newTask: Task) => {
