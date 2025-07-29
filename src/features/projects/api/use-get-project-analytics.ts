@@ -28,7 +28,13 @@ export const useGetProjectAnalytics = ({
             return data;
         },
         refetchOnWindowFocus: false,
-
+        staleTime: 60000, // Cache analytics for 1 minute
+        gcTime: 600000, // Keep in cache for 10 minutes
+        retry: (failureCount, error) => {
+            if (error.message.includes('4')) return false;
+            return failureCount < 2;
+        },
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     });
 
     return query;

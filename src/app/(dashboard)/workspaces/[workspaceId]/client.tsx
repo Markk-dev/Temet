@@ -12,11 +12,12 @@ import { useCreateTaskModal } from "@/features/tasks/hooks/use-create-task-modal
 import { useCreateProjectModal } from "@/features/projects/hooks/use-create-project-modal";
 import { useGetWorkspaceAnalytics } from "@/features/workspaces/api/use-get-workspace-analytics";
 import { usePusherAnalytics } from "@/hooks/use-pusher-analytics";
+import { usePrefetchData } from "@/hooks/use-prefetch-data";
 
 import { Button } from "@/components/ui/button";
 import { Analytics } from "@/components/analytics";
 import { PageError } from "@/components/page-error";
-import { PageLoader } from "@/components/page-loader";
+import { DashboardLoader } from "@/components/optimized-loader";
 import { DottedSeparator } from "@/components/dotted-line";
 import { Card, CardContent } from "@/components/ui/card";
 import { Project } from "@/features/projects/types";
@@ -44,7 +45,7 @@ export const WorkspaceIdClient = () => {
         isLoadingMembers;
 
         if(isLoading){
-            return <PageLoader/>
+            return <DashboardLoader/>
         }
 
         if(!analytics || !tasks || !projects || !members) {

@@ -12,9 +12,28 @@ function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        // With SSR, we usually want to set some default staleTime
-        // above 0 to avoid refetching immediately on the client
-        staleTime: 60 * 1000,
+        // Aggressive caching for better performance
+        staleTime: 30 * 1000, // 30 seconds
+        gcTime: 5 * 60 * 1000, // 5 minutes
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: true,
+        refetchOnMount: true,
+        // Smart retry logic
+        retry: (failureCount, error) => {
+          // Don't retry on 4xx errors (client errors)
+          if (error?.message?.includes('4')) return false;
+          // Retry up to 2 times for network issues
+          return failureCount < 2;
+        },
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        // Network timeout
+        networkMode: 'online',
+      },
+      mutations: {
+        // Retry mutations once on network failure
+        retry: 1,
+        retryDelay: 1000,
+        networkMode: 'online',
       },
     },
   })

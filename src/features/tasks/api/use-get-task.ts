@@ -53,6 +53,14 @@ export const useGetTasks = ({
             return data;
         },
         refetchOnWindowFocus: false,
+        staleTime: 30000, // Cache for 30 seconds to reduce API calls
+        gcTime: 300000, // Keep in cache for 5 minutes
+        retry: (failureCount, error) => {
+            // Don't retry on 4xx errors, only on network issues
+            if (error.message.includes('4')) return false;
+            return failureCount < 2;
+        },
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     });
 
     return query;
