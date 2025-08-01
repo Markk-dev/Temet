@@ -304,6 +304,16 @@ const app = new  Hono()
         const lastMonthStart = startOfMonth(subMonths(now, 1));
         const lastMonthEnd = endOfMonth(subMonths(now, 1));
 
+        // Count ALL tasks in the project (not just this month)
+        const allTasks = await databases.listDocuments(
+          DATABASE_ID,
+          TASKS_ID,
+          [
+            Query.equal("projectId", projectId),
+          ]
+        );
+
+        // Count tasks created this month vs last month for difference calculation
         const thisMonthTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -311,7 +321,6 @@ const app = new  Hono()
             Query.equal("projectId", projectId),
             Query.greaterThanEqual("$createdAt", thisMonthStart.toISOString()),
             Query.lessThanEqual("$createdAt", thisMonthEnd.toISOString()),
-          
           ]
         );
 
@@ -322,22 +331,31 @@ const app = new  Hono()
             Query.equal("projectId", projectId),
             Query.greaterThanEqual("$createdAt", lastMonthStart.toISOString()),
             Query.lessThanEqual("$createdAt", lastMonthEnd.toISOString()),
-          
           ]
         );
 
-        const taskCount = thisMonthTasks.total;
-        const taskDifference = taskCount - lastMonthTasks.total;
+        const taskCount = allTasks.total;
+        const taskDifference = thisMonthTasks.total - lastMonthTasks.total;
 
+        // Count ALL tasks assigned to current user (not just this month)
+        const allAssignedTasks = await databases.listDocuments(
+          DATABASE_ID,
+          TASKS_ID,
+          [
+            Query.equal("projectId", projectId),
+            Query.contains("assigneeId", member.$id),
+          ]
+        );
+
+        // Count assigned tasks created this month vs last month for difference
         const thisMonthAssignedTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
           [
             Query.equal("projectId", projectId),
-            Query.equal("assigneeId", member.$id),
+            Query.contains("assigneeId", member.$id),
             Query.greaterThanEqual("$createdAt", thisMonthStart.toISOString()),
             Query.lessThanEqual("$createdAt", thisMonthEnd.toISOString()),
-          
           ]
         );
 
@@ -346,16 +364,26 @@ const app = new  Hono()
           TASKS_ID,
           [
             Query.equal("projectId", projectId),
-            Query.equal("assigneeId", member.$id),
+            Query.contains("assigneeId", member.$id),
             Query.greaterThanEqual("$createdAt", lastMonthStart.toISOString()),
             Query.lessThanEqual("$createdAt", lastMonthEnd.toISOString()),
-  
           ]
         );
 
-        const assignedTaskCount = thisMonthAssignedTasks.total;
-        const assignedTaskDifference = assignedTaskCount - lastMonthAssignedTasks.total;
+        const assignedTaskCount = allAssignedTasks.total;
+        const assignedTaskDifference = thisMonthAssignedTasks.total - lastMonthAssignedTasks.total;
 
+        // Count ALL completed tasks in project (not just this month)
+        const allCompletedTasks = await databases.listDocuments(
+          DATABASE_ID,
+          TASKS_ID,
+          [
+            Query.equal("projectId", projectId),
+            Query.equal("status", TaskStatus.DONE),
+          ]
+        );
+
+        // Count completed tasks created this month vs last month for difference
         const thisMonthCompletedTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -364,7 +392,6 @@ const app = new  Hono()
             Query.equal("status", TaskStatus.DONE),
             Query.greaterThanEqual("$createdAt", thisMonthStart.toISOString()),
             Query.lessThanEqual("$createdAt", thisMonthEnd.toISOString()),
-          
           ]
         );
 
@@ -380,9 +407,21 @@ const app = new  Hono()
           ]
         );
 
-        const completedTaskCount = thisMonthCompletedTasks.total;
-        const completedTaskDifference = completedTaskCount - lastMonthCompletedTasks.total;
+        const completedTaskCount = allCompletedTasks.total;
+        const completedTaskDifference = thisMonthCompletedTasks.total - lastMonthCompletedTasks.total;
 
+        // Count ALL overdue tasks in project (not just this month)
+        const allOverdueTasks = await databases.listDocuments(
+          DATABASE_ID,
+          TASKS_ID,
+          [
+            Query.equal("projectId", projectId),
+            Query.notEqual("status", TaskStatus.DONE),
+            Query.lessThan("dueDate", now.toISOString()),
+          ]
+        );
+
+        // Count overdue tasks created this month vs last month for difference
         const thisMonthOverdueTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -392,7 +431,6 @@ const app = new  Hono()
             Query.lessThan("dueDate", now.toISOString()),
             Query.greaterThanEqual("$createdAt", thisMonthStart.toISOString()),
             Query.lessThanEqual("$createdAt", thisMonthEnd.toISOString()),
-          
           ]
         );
 
@@ -405,13 +443,23 @@ const app = new  Hono()
             Query.lessThan("dueDate", now.toISOString()),
             Query.greaterThanEqual("$createdAt", lastMonthStart.toISOString()),
             Query.lessThanEqual("$createdAt", lastMonthEnd.toISOString()),
-  
           ]
         );
 
-        const overdueTaskCount = thisMonthOverdueTasks.total;
-        const overdueTaskDifference = overdueTaskCount - lastMonthOverdueTasks.total;
+        const overdueTaskCount = allOverdueTasks.total;
+        const overdueTaskDifference = thisMonthOverdueTasks.total - lastMonthOverdueTasks.total;
 
+        // Count ALL incomplete tasks in project (not just this month)
+        const allIncompleteTasks = await databases.listDocuments(
+          DATABASE_ID,
+          TASKS_ID,
+          [
+            Query.equal("projectId", projectId),
+            Query.notEqual("status", TaskStatus.DONE),
+          ]
+        );
+
+        // Count incomplete tasks created this month vs last month for difference
         const thisMonthIncompleteTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -420,7 +468,6 @@ const app = new  Hono()
             Query.notEqual("status", TaskStatus.DONE),
             Query.greaterThanEqual("$createdAt", thisMonthStart.toISOString()),
             Query.lessThanEqual("$createdAt", thisMonthEnd.toISOString()),
-          
           ]
         );
 
@@ -436,8 +483,8 @@ const app = new  Hono()
           ]
         );
 
-        const incompleteTaskCount = thisMonthIncompleteTasks.total;
-        const incompleteTaskDifference = incompleteTaskCount - lastMonthIncompleteTasks.total;
+        const incompleteTaskCount = allIncompleteTasks.total;
+        const incompleteTaskDifference = thisMonthIncompleteTasks.total - lastMonthIncompleteTasks.total;
 
         return c.json({
           data:{
