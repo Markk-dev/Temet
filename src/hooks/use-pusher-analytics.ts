@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import Pusher from 'pusher-js';
 
 
-export const usePusherAnalytics = () => {
+export const usePusherAnalytics = (workspaceId?: string) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -25,21 +25,21 @@ export const usePusherAnalytics = () => {
     
 
     pusher.connection.bind('connected', () => {
-      console.log('🔄 Pusher Analytics: Connected successfully');
+      console.log('Pusher Analytics: Connected successfully');
     });
     
     pusher.connection.bind('error', (err: any) => {
-      console.error('❌ Pusher Analytics: Connection error:', err);
+      console.error('Pusher Analytics: Connection error:', err);
     });
     
     const channel = pusher.subscribe('tasks');
     
     channel.bind('pusher:subscription_succeeded', () => {
-      console.log('🔄 Pusher Analytics: Subscribed to tasks channel');
+      console.log('Pusher Analytics: Subscribed to tasks channel');
     });
     
     channel.bind('pusher:subscription_error', (err: any) => {
-      console.error('❌ Pusher Analytics: Subscription error:', err);
+      console.error('Pusher Analytics: Subscription error:', err);
     });
 
 
@@ -47,27 +47,38 @@ export const usePusherAnalytics = () => {
       queryClient.invalidateQueries({ queryKey: ["workspace-analytics"] });
       queryClient.invalidateQueries({ queryKey: ["project-analytics"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      console.log('📊 Analytics queries invalidated');
+      
+      
+      if (workspaceId) {
+        queryClient.invalidateQueries({ queryKey: ["member-time-analytics", workspaceId] });
+        console.log('Member time analytics invalidated for workspace:', workspaceId);
+      } else {
+        
+        queryClient.invalidateQueries({ queryKey: ["member-time-analytics"] });
+        console.log('All member time analytics invalidated');
+      }
+      
+      console.log('Analytics queries invalidated');
     };
 
 
     channel.bind('task-created', () => {
-      console.log('📝 Task created - updating analytics');
+      console.log('Task created - updating analytics');
       invalidateAnalytics();
     });
     
     channel.bind('task-updated', () => {
-      console.log('✏️ Task updated - updating analytics');
+      console.log('Task updated - updating analytics (includes time tracking)');
       invalidateAnalytics();
     });
     
     channel.bind('task-deleted', () => {
-      console.log('🗑️ Task deleted - updating analytics');
+      console.log('Task deleted - updating analytics');
       invalidateAnalytics();
     });
     
     channel.bind('tasks-bulk-updated', () => {
-      console.log('📦 Tasks bulk updated - updating analytics');
+      console.log('Tasks bulk updated - updating analytics');
       invalidateAnalytics();
     });
 
@@ -75,7 +86,7 @@ export const usePusherAnalytics = () => {
       channel.unbind_all();
       channel.unsubscribe();
       pusher.disconnect();
-      console.log('🔌 Pusher Analytics: Disconnected');
+      console.log('Pusher Analytics: Disconnected');
     };
-  }, [queryClient]);
+  }, [queryClient, workspaceId]);
 };

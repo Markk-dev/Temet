@@ -9,13 +9,13 @@ import WorkspaceSwitcher from "./workspace-switcher";
 
 export const Sidebar = () => {
     return (
-        <aside className="h-full bg-neutral-100 p-4 w-full">
+        <aside className="h-full bg-neutral-100 p-3.5 w-full">
             <Link href="/">
             <Image
                 src="/main.svg"
                 alt="logo"
-                width={120} 
-                height={108} 
+                width={100} 
+                height={90}
                 />
             </Link>
             <DottedSeparator className="my-4"/>

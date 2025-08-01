@@ -1,29 +1,33 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { PencilIcon, XIcon } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
-import { Task } from "../types";
-
-import { useUpdateTask } from "../api/use-update-task";
-import { useQueryClient } from '@tanstack/react-query';
-import { useCurrent } from "@/features/auth/api/use-current";
-
+import { DottedSeparator } from "@/components/dotted-line";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { DottedSeparator } from "@/components/dotted-line";
+import { Task } from "../types";
+import { useUpdateTask } from "../api/use-update-task";
+import { useCurrentMember } from "@/features/members/api/use-current-member";
+import { useCurrent } from "@/features/auth/api/use-current";
+import { canEditTask } from "../utils/permissions";
 
 interface TaskDescriptionProps {
     task: Task;
+    assignee?: any;
 };
 
-export const TaskDescription = ({ task }: TaskDescriptionProps) => {
+export const TaskDescription = ({ task, assignee }: TaskDescriptionProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [value, setValue] = useState(task.description);
 
     const { data: currentUser } = useCurrent();
-    const assigneesArr = Array.isArray(task.assignees) ? task.assignees : task.assignees ? [task.assignees] : [];
-    const isAssignee = assigneesArr.some(
-        (a: any) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
-    );
+    const { data: currentMember } = useCurrentMember();
+    
+    const canEdit = canEditTask({
+        currentUserId: currentUser?.$id,
+        assignees: assignee,
+        currentMemberRole: currentMember?.role,
+    });
 
     useEffect(() => {
         setValue(task.description);
@@ -53,7 +57,7 @@ export const TaskDescription = ({ task }: TaskDescriptionProps) => {
         <div className="p-4 border rounded-lg">
             <div className="flex items-center justify-between">
                 <p className="text-lg font-semibold">Task Description</p>
-                <Button onClick={() => setIsEditing((prev) => !prev)} variant="secondary" size="sm" disabled={!isAssignee}>
+                <Button onClick={() => setIsEditing((prev) => !prev)} variant="secondary" size="sm" disabled={!canEdit}>
                     {isEditing ? (
                       <XIcon className="size-4 mr-2"/>
                     ) : (

@@ -57,6 +57,27 @@ const app = new Hono()
         })
     }
 )
+.get(
+    "/current-member/:workspaceId",
+    SessionMiddleware,
+    async (c) => {
+        const { workspaceId } = c.req.param();
+        const user = c.get("user");
+        const databases = c.get("databases");
+        
+        const member = await getMembers({
+            databases,
+            workspaceId,
+            userId: user.$id,
+        });
+
+        if (!member) {
+            return c.json({ error: "Member not found" }, 404);
+        }
+
+        return c.json({ data: member });
+    }
+)
 .delete(
     "/:memberId",
     SessionMiddleware,

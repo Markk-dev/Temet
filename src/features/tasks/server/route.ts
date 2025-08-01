@@ -351,11 +351,11 @@ const app = new Hono()
             updatedTimeLogs = [];
         }
 
-        const currentTime = new Date().toISOString();
         const oldStatus = existingTask.status;
         const newStatus = status;
+        const currentTime = new Date().toISOString();
 
-        
+        // Handle time logging when status changes
         if (newStatus && newStatus !== oldStatus) {
             
             if (newStatus === TaskStatus.IN_PROGRESS) {

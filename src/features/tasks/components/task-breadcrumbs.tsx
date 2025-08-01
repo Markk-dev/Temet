@@ -12,15 +12,19 @@ import { UseConfirm } from "@/hooks/use-confirm";
 import { useRouter } from "next/navigation";
 
 import { useCurrent } from "@/features/auth/api/use-current";
+import { useCurrentMember } from "@/features/members/api/use-current-member";
+import { canEditTask } from "../utils/permissions";
 
 interface TaskBreadcrumbsProps {
     project: Project;
     task: Task;
+    assignee: any;
 };
 
 export const TaskBreadcrumbs = ({
     project,
     task,
+    assignee,
 }: TaskBreadcrumbsProps) => {
     const router = useRouter();
     const workspaceId = useWorkspaceId();
@@ -31,10 +35,13 @@ export const TaskBreadcrumbs = ({
         "deletion",
     );
     const { data: currentUser } = useCurrent();
-    const assigneesArr = Array.isArray(task.assignees) ? task.assignees : task.assignees ? [task.assignees] : [];
-    const isAssignee = assigneesArr.some(
-        (a: any) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
-    );
+    const { data: currentMember } = useCurrentMember();
+    
+    const canEdit = canEditTask({
+        currentUserId: currentUser?.$id,
+        assignees: assignee,
+        currentMemberRole: currentMember?.role,
+    });
 
     const handleDeleteTask = async () => {
         const ok = await confirm();
@@ -67,7 +74,7 @@ export const TaskBreadcrumbs = ({
         </p>
         <Button
           onClick={handleDeleteTask}
-          disabled={isPending || !isAssignee}
+          disabled={isPending || !canEdit}
           className="ml-auto"
           variant="deletion"
           size="sm"

@@ -34,11 +34,9 @@ import React from "react";
 export const WorkspaceIdClient = () => {
     const workspaceId = useWorkspaceId();
     
-    // Initialize prefetch and pusher hooks
     const { prefetchWorkspaceData } = usePrefetchData();
-    usePusherAnalytics();
+    usePusherAnalytics(workspaceId); 
     
-    // Prefetch data on component mount for better performance
     React.useEffect(() => {
         if (workspaceId) {
             prefetchWorkspaceData(workspaceId);
@@ -109,13 +107,13 @@ export const TaskList = ({ data, total }: TasklistProps) => {
                 className={cn(
                   "flex flex-col gap-y-4 max-h-72 pr-2",
                   data.length > 4 ? "overflow-y-scroll" : "overflow-hidden",
-                  // Slim greyish scrollbar styling - matches Projects/Members
+                  
                   "[&::-webkit-scrollbar]:w-2",
                   "[&::-webkit-scrollbar-track]:bg-gray-100",
                   "[&::-webkit-scrollbar-thumb]:bg-gray-300",
                   "[&::-webkit-scrollbar-thumb]:rounded-full",
                   "[&::-webkit-scrollbar-thumb:hover]:bg-gray-400",
-                  // Firefox scrollbar
+                  
                   "scrollbar-width:thin",
                   "scrollbar-color:rgb(209 213 219) rgb(243 244 246)"
                 )}
@@ -191,13 +189,13 @@ export const ProjectList = ({ data, total }: ProjectlistProps) => {
               <div className={cn(
                 "pr-2",
                 data.length > 6 ? "max-h-32 overflow-y-scroll" : "overflow-hidden",
-                // Slim greyish scrollbar styling
+                
                 "[&::-webkit-scrollbar]:w-2",
                 "[&::-webkit-scrollbar-track]:bg-gray-100",
                 "[&::-webkit-scrollbar-thumb]:bg-gray-300",
                 "[&::-webkit-scrollbar-thumb]:rounded-full",
                 "[&::-webkit-scrollbar-thumb:hover]:bg-gray-400",
-                // Firefox scrollbar
+                
                 "scrollbar-width:thin",
                 "scrollbar-color:rgb(209 213 219) rgb(243 244 246)"
               )}>
@@ -257,13 +255,13 @@ export const MembersList = ({ data, total }: MemberslistProps) => {
               <div className={cn(
                 "pr-2",
                 data.length > 6 ? "max-h-32 overflow-y-scroll" : "overflow-hidden",
-                // Slim greyish scrollbar styling
+                
                 "[&::-webkit-scrollbar]:w-2",
                 "[&::-webkit-scrollbar-track]:bg-gray-100",
                 "[&::-webkit-scrollbar-thumb]:bg-gray-300",
                 "[&::-webkit-scrollbar-thumb]:rounded-full",
                 "[&::-webkit-scrollbar-thumb:hover]:bg-gray-400",
-                // Firefox scrollbar
+                
                 "scrollbar-width:thin",
                 "scrollbar-color:rgb(209 213 219) rgb(243 244 246)"
               )}>

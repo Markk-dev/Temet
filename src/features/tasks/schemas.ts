@@ -1,13 +1,11 @@
 import { z } from "zod";
 import { TaskStatus } from "./types";
 
-// Schema for a single time log entry
+
 export const timeLogSchema = z.object({
   id: z.string().min(1, "Required"),
-  memberId: z.string().min(1, "Required"),
-  startTime: z.string().datetime(),
-  endTime: z.string().datetime().optional(),
-  duration: z.number().int().nonnegative().optional(),
+  started_at: z.string().datetime(),
+  ended_at: z.string().datetime().optional(),
 });
 
 export const createTaskSchema = z.object({
@@ -18,30 +16,25 @@ export const createTaskSchema = z.object({
   dueDate: z.coerce.date(),
   assigneeId: z.array(z.string().trim().min(1, "Required")).min(1, "Required"),
   description: z.string().optional(),
-  timeLogs: z.array(timeLogSchema).optional().default([]),
-  totalTimeSpent: z.number().int().nonnegative().optional().default(0),
-  lastActiveAt: z.string().datetime().optional(),
 });
 
-// Schema for updating a task
-export const updateTaskSchema = createTaskSchema.partial().extend({
-  id: z.string().min(1, "Required"),
-  // Make these fields optional for updates
+
+export const updateTaskSchema = z.object({
   name: z.string().min(1, "Required").max(60, "Task name should not exceed 60 characters").optional(),
   status: z.nativeEnum(TaskStatus).optional(),
-  workspaceId: z.string().trim().min(1, "Required").optional(),
   projectId: z.string().trim().min(1, "Required").optional(),
   dueDate: z.coerce.date().optional(),
   assigneeId: z.array(z.string().trim().min(1, "Required")).min(1, "Required").optional(),
+  description: z.string().optional(),
 });
 
-// Schema for starting/stopping time tracking
+
 export const timeTrackingSchema = z.object({
   taskId: z.string().min(1, "Required"),
   action: z.enum(["start", "stop"]),
 });
 
-// Schema for the complete task with all fields
+
 export const taskSchema = z.object({
   id: z.string(),
   name: z.string(),

@@ -15,17 +15,24 @@ import { snakeCaseToTitleCase } from "@/lib/utils";
 import { TaskActions } from "./task-actions";
 
 import { useCurrent } from "@/features/auth/api/use-current";
+import { useCurrentMember } from "@/features/members/api/use-current-member";
+import { canEditTask } from "../utils/permissions";
 
 type Member = { $id: string; name: string; userId?: string; /* other fields */ };
 
 // New component for the actions cell
 const TaskActionsCell = ({ id, projectId, assignees }: { id: string, projectId: string, assignees: Member[] }) => {
   const { data: currentUser } = useCurrent();
-  const isAssignee = assignees?.some(
-    (a: Member) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
-  );
+  const { data: currentMember } = useCurrentMember();
+  
+  const canEdit = canEditTask({
+    currentUserId: currentUser?.$id,
+    assignees: assignees,
+    currentMemberRole: currentMember?.role,
+  });
+  
   return (
-    <TaskActions id={id} projectId={projectId} disabled={!isAssignee}>
+    <TaskActions id={id} projectId={projectId} disabled={!canEdit}>
       <Button variant="ghost" className="size-8 p-0">
         <MoreVertical className="size-4"/>
       </Button>

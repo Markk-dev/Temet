@@ -1,16 +1,17 @@
-import { Task } from "../types";
 import { PencilIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 import { DottedSeparator } from "@/components/dotted-line";
+import { Button } from "@/components/ui/button";
+import { Task } from "../types";
+import { useEditTaskModal } from "../hooks/use-edit-task-modal";
 import { OverviewProperty } from "./overview-property";
 import { MemberAvatar } from "@/features/members/components/members-avatar";
 import { TaskDate } from "./task-date";
 import { Badge } from "@/components/ui/badge";
 import { snakeCaseToTitleCase } from "@/lib/utils";
-import { useEditTaskModal } from "../hooks/use-edit-task-modal";
-
+import { useCurrentMember } from "@/features/members/api/use-current-member";
 import { useCurrent } from "@/features/auth/api/use-current";
+import { canEditTask } from "../utils/permissions";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     return arr.reduce((acc: T[][], _, i) => {
@@ -32,16 +33,19 @@ export const TaskOverview = ({
     const {open} = useEditTaskModal();
     
     const { data: currentUser } = useCurrent();
-    const assigneesArr = Array.isArray(assignee) ? assignee : assignee ? [assignee] : [];
-    const isAssignee = assigneesArr.some(
-        (a: any) => a.userId === currentUser?.$id || a.$id === currentUser?.$id
-    );
+    const { data: currentMember } = useCurrentMember();
+    
+    const canEdit = canEditTask({
+        currentUserId: currentUser?.$id,
+        assignees: assignee,
+        currentMemberRole: currentMember?.role,
+    });
     return (
         <div className="flex flex-col gap-y-4 col-span-1">
             <div className="bg-muted rounded-lg p-4">
                 <div className="flex items-center justify-between"> 
                     <p className="text-lg font-semibold">Overview</p>
-                    <Button onClick={() => open(task.$id)} size="sm" variant="secondary" disabled={!isAssignee}>
+                    <Button onClick={() => open(task.$id)} size="sm" variant="secondary" disabled={!canEdit}>
                         <PencilIcon className="size-4 mr-2"/>
                         Edit
                     </Button>

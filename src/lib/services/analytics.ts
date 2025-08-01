@@ -3,6 +3,14 @@ import { DATABASE_ID, TASKS_ID, MEMBERS_ID } from "@/config";
 import { Query } from "node-appwrite";
 import { TimeLog, TaskStatus } from "@/features/tasks/types";
 
+export interface MemberAnalytics {
+  id: string;
+  name: string;
+  email: string;
+  totalTimeSpent: number; 
+  dailyTime: MemberDailyTime[];
+}
+
 interface MemberTimeAnalyticsParams {
   workspaceId: string;
 }
@@ -10,14 +18,6 @@ interface MemberTimeAnalyticsParams {
 interface MemberDailyTime {
   date: string;
   seconds: number;
-}
-
-interface MemberAnalytics {
-  id: string;
-  name: string;
-  email: string;
-  totalTimeSpent: number; 
-  dailyTime: MemberDailyTime[];
 }
 
 export async function getMemberTimeAnalytics({
@@ -39,8 +39,7 @@ export async function getMemberTimeAnalytics({
       DATABASE_ID,
       TASKS_ID,
       [
-        Query.equal("workspaceId", workspaceId),
-        Query.equal("status", TaskStatus.DONE)
+        Query.equal("workspaceId", workspaceId)
       ]
     );
 
@@ -87,9 +86,11 @@ export async function getMemberTimeAnalytics({
       const taskDailyTime: Record<string, number> = {}; 
 
       timeLogs.forEach((log: TimeLog) => {
-        if (!log.ended_at || !log.started_at) return; 
+        if (!log.started_at) return; 
 
-        const duration = (new Date(log.ended_at).getTime() - new Date(log.started_at).getTime()) / 1000;
+        
+        const endTime = log.ended_at || new Date().toISOString();
+        const duration = (new Date(endTime).getTime() - new Date(log.started_at).getTime()) / 1000;
         const date = log.started_at.split('T')[0]; 
         
         taskTotalTime += duration;
@@ -118,6 +119,7 @@ export async function getMemberTimeAnalytics({
             member.dailyTime.push({ date, seconds: dailyTimePerMember });
           }
         });
+        
       });
     });
 

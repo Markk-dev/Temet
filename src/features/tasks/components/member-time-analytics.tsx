@@ -5,21 +5,85 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, subDays, subWeeks, subMonths, subYears } from "date-fns";
+import { format, subDays, subMonths } from "date-fns";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 import { getMemberTimeAnalytics, MemberAnalytics } from "@/lib/api/analytics";
 import { Loader2 } from "lucide-react";
+import { DottedSeparator } from "@/components/dotted-line";
+import { createMemberColorMap } from "@/lib/colors";
 
 interface TimeDataPoint {
   date: string;
-  [memberId: string]: number | string; // Number will be time in seconds
+  [memberId: string]: number | string; 
 }
 
-type TimePeriod = "day" | "week" | "month" | "year";
+type TimePeriod = "week" | "month" | "year";
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+  timePeriod: TimePeriod;
+  members: MemberAnalytics[];
+  memberColorMap: Map<string, string>;
+}
+
+const CustomTooltip = ({ active, payload, label, timePeriod, members, memberColorMap }: CustomTooltipProps) => {
+  if (!active || !payload || !label) return null;
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    if (timePeriod === 'week') {
+      return format(date, 'eee'); 
+    } else if (timePeriod === 'year') {
+      return format(date, 'MM/dd/yy'); 
+    }
+    return format(date, 'MMM d'); 
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 min-w-[200px]">
+
+      <div className="flex justify-end mb-2">
+        <span className="text-sm font-medium text-gray-700">
+          {formatDate(label)}
+        </span>
+      </div>
+      
+      <DottedSeparator className="mb-3" />
+      
+      <div className="space-y-2">
+        {payload
+          .filter(entry => entry.value > 0) 
+          .map((entry, index) => {
+            const member = members.find(m => m.id === entry.dataKey);
+            if (!member) return null;
+            
+            const hours = Math.floor(entry.value / 3600);
+            const minutes = Math.round((entry.value % 3600) / 60);
+            const timeDisplay = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+            
+            return (
+              <div key={entry.dataKey} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-sm"
+                    style={{ backgroundColor: memberColorMap.get(entry.dataKey) }}
+                  />
+                  <span className="text-sm text-gray-700">{member.name}</span>
+                </div>
+                <span className="text-sm font-medium text-gray-900">{timeDisplay}</span>
+              </div>
+            );
+          })}
+      </div>
+    </div>
+  );
+};
 
 export function MemberTimeAnalytics() {
   const workspaceId = useWorkspaceId();
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>("day");
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("week");
   
   const { data, isLoading, error } = useQuery({
     queryKey: ["member-time-analytics", workspaceId],
@@ -43,11 +107,20 @@ export function MemberTimeAnalytics() {
     );
   }
 
-  // Generate date range based on selected period
+  
   const getDateRange = () => {
     const periods = {
-      day: { count: 24, subtract: (date: Date, i: number) => new Date(date.getTime() - i * 60 * 60 * 1000), format: 'HH:mm' },
-      week: { count: 7, subtract: (date: Date, i: number) => subDays(date, 6 - i), format: 'MMM d' },
+      week: { 
+        count: 7, 
+        subtract: (date: Date, i: number) => {
+          const today = new Date();
+          const currentDay = today.getDay(); 
+          const startOfWeek = new Date(today);
+          startOfWeek.setDate(today.getDate() - currentDay); 
+          return new Date(startOfWeek.getTime() + i * 24 * 60 * 60 * 1000); 
+        }, 
+        format: 'eee' 
+      },
       month: { count: 30, subtract: (date: Date, i: number) => subDays(date, 29 - i), format: 'MMM d' },
       year: { count: 12, subtract: (date: Date, i: number) => subMonths(date, 11 - i), format: 'MMM yyyy' }
     };
@@ -60,32 +133,37 @@ export function MemberTimeAnalytics() {
     return format(date, 'yyyy-MM-dd');
   });
 
-  // Transform data for the chart
+  
+  const sortedMembers = [...data.members]
+    .map((member) => {
+      
+      const totalTime = member.dailyTime
+        .filter(day => timeRange.includes(day.date))
+        .reduce((sum, day) => sum + day.seconds, 0);
+      return { ...member, totalTime };
+    })
+    .filter((member) => member.totalTime > 0) 
+    .sort((a, b) => b.totalTime - a.totalTime); 
+
   const chartData: TimeDataPoint[] = [];
   
-  timeRange.forEach(date => {
-    const dayData: TimeDataPoint = { date };
+  timeRange.forEach(timePoint => {
+    const dayData: TimeDataPoint = { date: timePoint };
     
-    data.members.forEach((member: MemberAnalytics) => {
-      const memberDay = member.dailyTime.find((d: { date: string; seconds: number }) => d.date === date);
+    sortedMembers.forEach((member: MemberAnalytics) => {
+      const memberDay = member.dailyTime.find((d: { date: string; seconds: number }) => d.date === timePoint);
       dayData[member.id] = memberDay ? memberDay.seconds : 0;
     });
     
     chartData.push(dayData);
   });
 
-  // Generate colors for lines
-  const colors = [
-    '#3b82f6', // blue-500
-    '#10b981', // emerald-500
-    '#f59e0b', // amber-500
-    '#8b5cf6', // violet-500
-    '#ec4899', // pink-500
-  ];
+  
+  
+  const memberColorMap = createMemberColorMap(data.members);
 
   const getDescription = () => {
     const descriptions = {
-      day: "Time spent on tasks in the last 24 hours",
       week: "Time spent on tasks in the last 7 days", 
       month: "Time spent on tasks in the last 30 days",
       year: "Time spent on tasks in the last 12 months"
@@ -103,7 +181,6 @@ export function MemberTimeAnalytics() {
           </div>
           <Tabs value={timePeriod} onValueChange={(value) => setTimePeriod(value as TimePeriod)}>
             <TabsList className="h-7">
-              <TabsTrigger value="day" className="text-xs px-2 py-1">Day</TabsTrigger>
               <TabsTrigger value="week" className="text-xs px-2 py-1">Week</TabsTrigger>
               <TabsTrigger value="month" className="text-xs px-2 py-1">Month</TabsTrigger>
               <TabsTrigger value="year" className="text-xs px-2 py-1">Year</TabsTrigger>
@@ -136,22 +213,16 @@ export function MemberTimeAnalytics() {
                 width={30}
               />
               <Tooltip 
-                formatter={(value: number) => {
-                  const hours = Math.floor(value / 3600);
-                  const minutes = Math.round((value % 3600) / 60);
-                  if (hours > 0) return `${hours}h ${minutes}m`;
-                  return `${minutes}m`;
-                }}
-                labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                content={<CustomTooltip timePeriod={timePeriod} members={sortedMembers} memberColorMap={memberColorMap} />}
               />
               <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '5px' }} />
-              {data.members.map((member: MemberAnalytics, index: number) => (
+              {sortedMembers.map((member: MemberAnalytics, index: number) => (
                 <Line
                   key={member.id}
                   type="monotone"
                   dataKey={member.id}
                   name={member.name}
-                  stroke={colors[index % colors.length]}
+                  stroke={memberColorMap.get(member.id)}
                   strokeWidth={1.5}
                   dot={false}
                   activeDot={{ r: 4 }}
