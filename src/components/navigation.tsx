@@ -8,8 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 
-import { GoCheckCircleFill, GoCheckCircle, GoHome, GoHomeFill } from "react-icons/go";
-
+import { GoCheckCircleFill, GoCheckCircle, GoHome, GoHomeFill} from "react-icons/go";
 
 const routes = [
     {
@@ -35,7 +34,7 @@ const routes = [
         href: "/members",
         icon: UsersIcon,
         activeIcon: UsersIcon,
-    },
+    }
 ];
 
 export const Navigation = () => {

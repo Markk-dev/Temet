@@ -145,6 +145,9 @@ export function MemberTimeAnalytics() {
     .filter((member) => member.totalTime > 0) 
     .sort((a, b) => b.totalTime - a.totalTime); 
 
+  
+  const hasActivity = sortedMembers.length > 0;
+
   const chartData: TimeDataPoint[] = [];
   
   timeRange.forEach(timePoint => {
@@ -189,48 +192,54 @@ export function MemberTimeAnalytics() {
         </div>
       </CardHeader>
       <CardContent className="pb-2">
-        <div className="h-32">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={chartData}
-              margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis 
-                dataKey="date" 
-                tickFormatter={(value) => format(new Date(value), periodConfig.format)}
-                tick={{ fill: '#6b7280', fontSize: 10 }}
-                tickLine={false}
-                height={20}
-              />
-              <YAxis 
-                tickFormatter={(value) => {
-                  if (value >= 3600) return `${Math.round(value / 3600)}h`;
-                  return `${Math.round(value / 60)}m`;
-                }}
-                tick={{ fill: '#6b7280', fontSize: 10 }}
-                tickLine={false}
-                width={30}
-              />
-              <Tooltip 
-                content={<CustomTooltip timePeriod={timePeriod} members={sortedMembers} memberColorMap={memberColorMap} />}
-              />
-              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '5px' }} />
-              {sortedMembers.map((member: MemberAnalytics, index: number) => (
-                <Line
-                  key={member.id}
-                  type="monotone"
-                  dataKey={member.id}
-                  name={member.name}
-                  stroke={memberColorMap.get(member.id)}
-                  strokeWidth={1.5}
-                  dot={false}
-                  activeDot={{ r: 4 }}
+        {hasActivity ? (
+          <div className="h-32">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={chartData}
+                margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(value) => format(new Date(value), periodConfig.format)}
+                  tick={{ fill: '#6b7280', fontSize: 10 }}
+                  tickLine={false}
+                  height={20}
                 />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+                <YAxis 
+                  tickFormatter={(value) => {
+                    if (value >= 3600) return `${Math.round(value / 3600)}h`;
+                    return `${Math.round(value / 60)}m`;
+                  }}
+                  tick={{ fill: '#6b7280', fontSize: 10 }}
+                  tickLine={false}
+                  width={30}
+                />
+                <Tooltip 
+                  content={<CustomTooltip timePeriod={timePeriod} members={sortedMembers} memberColorMap={memberColorMap} />}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '5px' }} />
+                {sortedMembers.map((member: MemberAnalytics, index: number) => (
+                  <Line
+                    key={member.id}
+                    type="monotone"
+                    dataKey={member.id}
+                    name={member.name}
+                    stroke={memberColorMap.get(member.id)}
+                    strokeWidth={1.5}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-32 flex items-center justify-center text-muted-foreground text-sm">
+            No activity data for the selected time period
+          </div>
+        )}
       </CardContent>
     </Card>
   );

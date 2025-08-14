@@ -6,9 +6,9 @@ export const usePrefetchData = () => {
   const queryClient = useQueryClient();
 
   const prefetchWorkspaceData = useCallback(async (workspaceId: string) => {
-    // Prefetch all workspace-related data in parallel
+    
     await Promise.all([
-      // Prefetch workspace analytics
+      
       queryClient.prefetchQuery({
         queryKey: ["workspace-analytics", workspaceId],
         queryFn: async () => {
@@ -19,10 +19,10 @@ export const usePrefetchData = () => {
           const { data } = await response.json();
           return data;
         },
-        staleTime: 30000, // Consider fresh for 30 seconds
+        staleTime: 30000,
       }),
 
-      // Prefetch member time analytics
+      
       queryClient.prefetchQuery({
         queryKey: ["member-time-analytics", workspaceId],
         queryFn: async () => {
@@ -36,7 +36,7 @@ export const usePrefetchData = () => {
         staleTime: 30000,
       }),
 
-      // Prefetch tasks
+      
       queryClient.prefetchQuery({
         queryKey: ["tasks", workspaceId],
         queryFn: async () => {
@@ -50,7 +50,7 @@ export const usePrefetchData = () => {
         staleTime: 30000,
       }),
 
-      // Prefetch projects
+      
       queryClient.prefetchQuery({
         queryKey: ["projects", workspaceId],
         queryFn: async () => {
@@ -64,7 +64,7 @@ export const usePrefetchData = () => {
         staleTime: 30000,
       }),
 
-      // Prefetch members
+      
       queryClient.prefetchQuery({
         queryKey: ["members", workspaceId],
         queryFn: async () => {
@@ -81,7 +81,7 @@ export const usePrefetchData = () => {
   }, [queryClient]);
 
   const prefetchProjectData = useCallback(async (projectId: string) => {
-    // Prefetch project analytics
+    
     await queryClient.prefetchQuery({
       queryKey: ["project-analytics", projectId],
       queryFn: async () => {

@@ -5,6 +5,7 @@ import { Projects } from "./projects";
 import { Navigation } from "./navigation";
 import { DottedSeparator } from "./dotted-line";
 import WorkspaceSwitcher from "./workspace-switcher";
+import { TemBox } from "./tembox";
 
 
 export const Sidebar = () => {
@@ -20,6 +21,8 @@ export const Sidebar = () => {
             </Link>
             <DottedSeparator className="my-4"/>
             <WorkspaceSwitcher/>
+            <DottedSeparator className="my-4"/>
+            <TemBox/>
             <DottedSeparator className="my-4"/>
             <Navigation/>
             <DottedSeparator className="my-4"/>

@@ -5,6 +5,11 @@ import { EditTaskModal } from "@/features/tasks/components/edit-task-modal";
 import { CreateTaskModal } from "@/features/tasks/components/create-task-modal";
 import { CreateProjectModal } from "@/features/projects/components/create-project-modal";
 import { CreateWorkspaceModal } from "@/features/workspaces/components/create-workspace-modal";
+import { TemBoxModal } from "@/features/tembox/components/tembox-modal";
+import { CreateFolderModal } from "@/features/tembox/components/create-folder-modal";
+import { UpdateFolderModal } from "@/features/tembox/components/update-folder-modal";
+import { FolderViewModal } from "@/features/tembox/components/folder-view-modal";
+import { FileUploadModal } from "@/features/tembox/components/file-upload-modal";
 
 interface DashboardProps {
     children: React.ReactNode;
@@ -17,6 +22,11 @@ const layout = ({children}: DashboardProps) => {
         <CreateProjectModal/>
         <CreateTaskModal/>
         <EditTaskModal/>
+        <TemBoxModal/>
+        <CreateFolderModal/>
+        <UpdateFolderModal/>
+        <FolderViewModal/>
+        <FileUploadModal/>
         <div className="flex w-full h-full">
             <div className="fixed left-0 top-0 hidden lg:block lg:w-[264px] h-full overflow-y-auto">
                 <Sidebar/>

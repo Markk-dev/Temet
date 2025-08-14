@@ -11,7 +11,6 @@ import { AUTH_COOKIE } from "../constants";
 import { SessionMiddleware } from "@/lib/session-middleware";
 
 
-
 const app = new Hono()
     .get("/current", SessionMiddleware, (c) => {
         const user = c.get("user");

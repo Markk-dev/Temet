@@ -53,7 +53,7 @@ const app = new  Hono()
                 return c.text("Server misconfiguration", 500);
               }
       
-              //Will fix later but for now HARDCODED KA MUNA
+              
               uploadedImageUrl = getFileViewUrl(file.$id);
             }
       
@@ -176,7 +176,7 @@ const app = new  Hono()
             return c.text("Server misconfiguration", 500);
           }
   
-          //Will fix later but for now HARDCODED KA MUNA
+          
           uploadedImageUrl = getFileViewUrl(file.$id);
         } else {
           uploadedImageUrl = image;
@@ -221,7 +221,7 @@ const app = new  Hono()
             return c.json({error: "Unauthorized"}, 401);
         }
 
-        // Check for tasks in this project
+        
         const tasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -230,7 +230,7 @@ const app = new  Hono()
           ]
         );
 
-        // If there are tasks, check if all are DONE
+        
         if (tasks.total > 0) {
           const notDone = tasks.documents.find(task => task.status !== "DONE");
           if (notDone) {
@@ -238,8 +238,8 @@ const app = new  Hono()
           }
         }
 
-        // CASCADE DELETE KAHIT BAWAL HAHA
-        // to make sure walang mag eeror if ever ma bypass
+        
+        
         for (const task of tasks.documents) {
           await databases.deleteDocument(
             DATABASE_ID,
@@ -248,7 +248,7 @@ const app = new  Hono()
           );
         }
   
-        // Delete the image from storage if it exists
+        
         if (existingProject.imageUrl) {
           const fileId = extractFileIdFromUrl(existingProject.imageUrl);
           if (fileId) {
@@ -261,7 +261,7 @@ const app = new  Hono()
           }
         }
 
-        //TODO: DELETE TASK
+        
   
         await databases.deleteDocument(
           DATABASE_ID,
@@ -273,7 +273,7 @@ const app = new  Hono()
         return c.json({data : { $id: existingProject.$id} })
       }
     )
-    //Newly Added
+    
     .get(
       "/:projectId/analytics",
       SessionMiddleware,
@@ -304,7 +304,7 @@ const app = new  Hono()
         const lastMonthStart = startOfMonth(subMonths(now, 1));
         const lastMonthEnd = endOfMonth(subMonths(now, 1));
 
-        // Count ALL tasks in the project (not just this month)
+        
         const allTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -313,7 +313,7 @@ const app = new  Hono()
           ]
         );
 
-        // Count tasks created this month vs last month for difference calculation
+        
         const thisMonthTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -337,7 +337,7 @@ const app = new  Hono()
         const taskCount = allTasks.total;
         const taskDifference = thisMonthTasks.total - lastMonthTasks.total;
 
-        // Count ALL tasks assigned to current user (not just this month)
+        
         const allAssignedTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -347,7 +347,7 @@ const app = new  Hono()
           ]
         );
 
-        // Count assigned tasks created this month vs last month for difference
+        
         const thisMonthAssignedTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -373,7 +373,7 @@ const app = new  Hono()
         const assignedTaskCount = allAssignedTasks.total;
         const assignedTaskDifference = thisMonthAssignedTasks.total - lastMonthAssignedTasks.total;
 
-        // Count ALL completed tasks in project (not just this month)
+        
         const allCompletedTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -383,7 +383,7 @@ const app = new  Hono()
           ]
         );
 
-        // Count completed tasks created this month vs last month for difference
+        
         const thisMonthCompletedTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -410,7 +410,7 @@ const app = new  Hono()
         const completedTaskCount = allCompletedTasks.total;
         const completedTaskDifference = thisMonthCompletedTasks.total - lastMonthCompletedTasks.total;
 
-        // Count ALL overdue tasks in project (not just this month)
+        
         const allOverdueTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -421,7 +421,7 @@ const app = new  Hono()
           ]
         );
 
-        // Count overdue tasks created this month vs last month for difference
+        
         const thisMonthOverdueTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -449,7 +449,7 @@ const app = new  Hono()
         const overdueTaskCount = allOverdueTasks.total;
         const overdueTaskDifference = thisMonthOverdueTasks.total - lastMonthOverdueTasks.total;
 
-        // Count ALL incomplete tasks in project (not just this month)
+        
         const allIncompleteTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
@@ -459,7 +459,7 @@ const app = new  Hono()
           ]
         );
 
-        // Count incomplete tasks created this month vs last month for difference
+        
         const thisMonthIncompleteTasks = await databases.listDocuments(
           DATABASE_ID,
           TASKS_ID,
