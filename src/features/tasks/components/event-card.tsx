@@ -35,7 +35,6 @@ export const EventCard = ({
     status,
     id
 }: EventCardProps) => {
-    console.log("EventCard assignee:", assignee);
     const workspaceId = useWorkspaceId();
     const router = useRouter();
 

@@ -8,7 +8,6 @@ export async function DELETE(
 ) {
   try {
     const { fileId } = params;
-    console.log("Deleting file:", fileId);
 
     const { databases, storage } = await createAdminClient();
 
@@ -19,14 +18,11 @@ export async function DELETE(
       fileId
     );
 
-    console.log("File record found:", fileRecord.$id, "Storage file ID:", fileRecord.fileId);
-
     // Delete the file from storage
     await storage.deleteFile(
       '684af449000b14ce963b', // bucket ID
       fileRecord.fileId
     );
-    console.log("File deleted from storage");
 
     // Delete the file record from database
     await databases.deleteDocument(
@@ -34,7 +30,6 @@ export async function DELETE(
       "files",
       fileId
     );
-    console.log("File record deleted from database");
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

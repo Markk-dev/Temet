@@ -21,6 +21,7 @@ import { TaskStatus } from "../types";
 import { useBulkUpdateTasks } from "../api/use-bulk-update-tasks";
 import { DataCalendar } from "./data-calendar";
 import { useProjectId } from "@/features/projects/hooks/use-project-id";
+import { TasksLoadingSkeleton } from "@/components/tasks-loading-skeleton";
 
 interface TaskViewSwitcherProps {
     hideProjectFilter?: boolean;
@@ -53,6 +54,7 @@ export const TaskViewSwitcher = ({hideProjectFilter} : TaskViewSwitcherProps) =>
             status,
             dueDate
           });
+          
     const onKanbanChange = useCallback((
         tasks: { $id: string; status: TaskStatus; position: number; } []
     ) => {
@@ -89,9 +91,7 @@ export const TaskViewSwitcher = ({hideProjectFilter} : TaskViewSwitcherProps) =>
                   <DataFilters hideProjectFilter={hideProjectFilter}/>
                 <DottedSeparator  className="my-4"/>
                 {isLoadingTasks ? (
-                    <div className="w-full border rounded-lg h-[200px] flex flex-col items-center justify-center">
-                        <Loader className="size-5 animate-spin text-muted-foreground"/>
-                    </div>
+                    <TasksLoadingSkeleton />
                 ) : (
                 <>
                     <TabsContent value="table" className="mt-0">

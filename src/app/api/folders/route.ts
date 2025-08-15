@@ -8,16 +8,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const workspaceId = searchParams.get("workspaceId");
 
-    console.log("GET /api/folders - workspaceId:", workspaceId);
-
     if (!workspaceId) {
       return NextResponse.json({ error: "Workspace ID is required" }, { status: 400 });
     }
 
     // Use admin client to bypass permission issues temporarily
     const { databases } = await createAdminClient();
-    
-    console.log("Admin client created, fetching folders for workspace:", workspaceId);
     
     const result = await databases.listDocuments(
       DATABASE_ID,
@@ -27,12 +23,6 @@ export async function GET(request: NextRequest) {
         Query.orderDesc("$createdAt")
       ]
     );
-
-    console.log("Folders fetched successfully:", {
-      total: result.total,
-      documentsCount: result.documents.length,
-      documents: result.documents.map(d => ({ id: d.$id, name: d.name, workspaceId: d.workspaceId }))
-    });
 
     return NextResponse.json({
       documents: result.documents,
@@ -54,16 +44,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, workspaceId, createdBy, color = "blue" } = body;
 
-    console.log("Creating folder with data:", { name, workspaceId, createdBy, color });
-
     if (!name || !workspaceId || !createdBy) {
       return NextResponse.json({ error: "Name, workspaceId, and createdBy are required" }, { status: 400 });
     }
 
     // Use admin client to bypass permission issues temporarily
     const { databases } = await createAdminClient();
-    
-    console.log("Admin client created, attempting to create document...");
     
     const folder = await databases.createDocument(
       DATABASE_ID,
@@ -77,7 +63,6 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    console.log("Folder created successfully:", folder.$id);
     return NextResponse.json(folder);
   } catch (error: any) {
     console.error("Error creating folder:", error);

@@ -7,7 +7,7 @@ interface useGetWorkspaceAnalyticsProps {
     workspaceId: string;
 }
 
-export type ProjectAnalyticsResponseType = InferResponseType<typeof client.api.workspaces[":workspaceId"]["analytics"]["$get"], 200>;
+export type WorkspaceAnalyticsResponseType = InferResponseType<typeof client.api.workspaces[":workspaceId"]["analytics"]["$get"], 200>;
 
 export const useGetWorkspaceAnalytics = ({
     workspaceId, 
@@ -28,14 +28,15 @@ export const useGetWorkspaceAnalytics = ({
             return data;
         },
         refetchOnWindowFocus: false,
-        staleTime: 60000, // Cache analytics for 1 minute
-        gcTime: 600000, // Keep in cache for 10 minutes
+        refetchOnMount: false, // Don't refetch if data exists
+        staleTime: 10 * 60 * 1000, // Cache analytics for 10 minutes
+        gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
         retry: (failureCount, error) => {
             if (error.message.includes('4')) return false;
-            return failureCount < 2;
+            return failureCount < 1; // Only retry once
         },
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000), // Faster retry
     });
 
     return query;
-}
+};

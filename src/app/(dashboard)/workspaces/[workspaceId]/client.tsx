@@ -34,37 +34,61 @@ import React from "react";
 export const WorkspaceIdClient = () => {
     const workspaceId = useWorkspaceId();
     
-    const { prefetchWorkspaceData } = usePrefetchData();
+    const { prefetchWorkspaceData, prefetchNavigationData } = usePrefetchData();
     usePusherAnalytics(workspaceId); 
     
     React.useEffect(() => {
         if (workspaceId) {
+            
+            prefetchNavigationData(workspaceId);
+            
+            
             prefetchWorkspaceData(workspaceId);
         }
-    }, [workspaceId, prefetchWorkspaceData]);
+    }, [workspaceId, prefetchWorkspaceData, prefetchNavigationData]);
     
-    const { data: analytics, isLoading: isLoadingAnalytics } = useGetWorkspaceAnalytics({ workspaceId })
+    
+    const { data: analytics, isLoading: isLoadingAnalytics } = useGetWorkspaceAnalytics({ 
+        workspaceId 
+    });
+    
+    
     const { data: tasks, isLoading: isLoadingTasks } = useGetTasks({ workspaceId })
     const { data: projects, isLoading: isLoadingProjects } = useGetProjects({ workspaceId })
     const { data: members, isLoading: isLoadingMembers } = useGetMembers({ workspaceId })
 
-    const isLoading = 
-        isLoadingAnalytics || 
+    
+    const isLoadingEssential = 
         isLoadingTasks || 
         isLoadingProjects || 
         isLoadingMembers;
 
-        if(isLoading){
-            return <DashboardLoader/>
-        }
+    if(isLoadingEssential){
+        return <DashboardLoader/>
+    }
 
-        if(!analytics || !tasks || !projects || !members) {
-            return <PageError message="Something went wrong"/>
-        }
+    if(!tasks || !projects || !members) {
+        return <PageError message="Something went wrong"/>
+    }
 
     return (
         <div className="h-full flex flex-col space-y-4">
-            <Analytics data={analytics}/>
+            {/* Show analytics when ready, or placeholder */}
+            {analytics ? (
+                <Analytics data={analytics}/>
+            ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <Card key={i} className="border-0 shadow-sm animate-pulse">
+                            <CardContent className="p-6">
+                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            )}
+            
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 <MemberTimeAnalytics />
                 <div className="bg-muted/50 rounded-lg border-2 border-dashed border-muted-foreground/25 p-4 flex items-center justify-center">
