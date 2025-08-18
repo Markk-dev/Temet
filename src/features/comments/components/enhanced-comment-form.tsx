@@ -32,13 +32,13 @@
         };
         onClose?: () => void;
         isOpen?: boolean;
-        parentId?: string; // For replies
-        commentId?: string; // For editing
-        initialContent?: string; // For editing
-        initialPriority?: "LOWEST" | "LOW" | "MEDIUM" | "HIGH" | "HIGHEST" | null; // For editing
-        initialPinnedFields?: string[]; // For editing
-        initialMentions?: string[]; // For editing
-        mode?: "create" | "edit" | "reply"; // Form mode
+        parentId?: string; 
+        commentId?: string; 
+        initialContent?: string; 
+        initialPriority?: "LOWEST" | "LOW" | "MEDIUM" | "HIGH" | "HIGHEST" | null; 
+        initialPinnedFields?: string[]; 
+        initialMentions?: string[]; 
+        mode?: "create" | "edit" | "reply"; 
     }
 
     type Priority = "LOWEST" | "LOW" | "MEDIUM" | "HIGH" | "HIGHEST";
@@ -124,13 +124,13 @@
         const { mutate: updateComment, isPending: isUpdating } = useUpdateComment({ taskId });
         const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-        // Initialize form state when initial values change (for edit mode)
+        
         useEffect(() => {
             if (mode === "edit") {
                 setContent(initialContent || "");
                 setSelectedPriority(initialPriority as Priority | null);
                 
-                // Initialize pinned fields
+                
                 const initialPinnedFieldsState: any = {};
                 if (initialPinnedFields && Array.isArray(initialPinnedFields)) {
                     initialPinnedFields.forEach(field => {
@@ -139,7 +139,7 @@
                 }
                 setPinnedFields(initialPinnedFieldsState);
                 
-                // Initialize mentions with user details
+                
                 if (initialMentions && Array.isArray(initialMentions) && members?.documents) {
                     const mentionsWithUsernames = initialMentions.map(userId => {
                         const member = members.documents.find(m => m.$id === userId);
@@ -197,8 +197,7 @@
             }
         };
 
-        
-        // Simplified field press - just tap, no hold
+       
         const handleFieldPress = (field: 'assignee' | 'status') => {
             if (field === 'assignee') {
                 setShowAssigneeDropdown(true);
@@ -209,9 +208,6 @@
             }
         };
 
-        // Remove all the mouse down/up/leave handlers since we're not using hold anymore
-
-        
         useEffect(() => {
             const handleClickOutside = (event: MouseEvent) => {
                 const target = event.target as Element;
@@ -240,7 +236,7 @@
             };
 
             if (mode === "edit" && commentId) {
-                // Handle edit mode
+                
                 updateComment(
                     { 
                         commentId, 
@@ -265,7 +261,7 @@
                     }
                 );
             } else {
-                // Handle create or reply mode
+                
                 const finalData = mode === "reply" && parentId 
                     ? { ...commentData, parentId }
                     : commentData;
