@@ -30,7 +30,7 @@ export const ProjectAvatar = ({
 
   return hasValidImage ? (
     <div className={cn("size-5 relative rounded-md overflow-hidden", className)}>
-      <Image src={image!} alt={name} fill className="object-cover" />
+      <Image src={image!} alt={name} fill className="object-cover" sizes="20px" />
     </div>
   ) : (
     <Avatar className={cn("size-5 rounded-md", className)}>

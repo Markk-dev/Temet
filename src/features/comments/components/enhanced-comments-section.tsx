@@ -36,7 +36,7 @@ export const EnhancedCommentsSection = ({
     const commentsArray = comments?.data || [];
 
     // Enable real-time comments synchronization
-    useRealtimeComments(taskId, workspaceId);
+    // useRealtimeComments(taskId, workspaceId);
 
     const handleOpenComment = () => {
         setIsCommentOpen(true);

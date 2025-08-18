@@ -1,6 +1,6 @@
     "use client";
 
-    import { useState, useRef, useEffect } from "react";
+    import { useState, useRef, useEffect, useMemo } from "react";
     import { Send, AtSign, Flag, User, X, ChevronDown } from "lucide-react";
     import { 
     IoIosArrowUp, 
@@ -124,12 +124,11 @@
         const { mutate: updateComment, isPending: isUpdating } = useUpdateComment({ taskId });
         const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-        
+        // Simple initialization without complex dependencies
         useEffect(() => {
             if (mode === "edit") {
                 setContent(initialContent || "");
                 setSelectedPriority(initialPriority as Priority | null);
-                
                 
                 const initialPinnedFieldsState: any = {};
                 if (initialPinnedFields && Array.isArray(initialPinnedFields)) {
@@ -138,22 +137,9 @@
                     });
                 }
                 setPinnedFields(initialPinnedFieldsState);
-                
-                
-                if (initialMentions && Array.isArray(initialMentions) && members?.documents) {
-                    const mentionsWithUsernames = initialMentions.map(userId => {
-                        const member = members.documents.find(m => m.$id === userId);
-                        return {
-                            userId,
-                            username: member?.name || member?.email || "Unknown User"
-                        };
-                    });
-                    setSelectedMentions(mentionsWithUsernames);
-                } else {
-                    setSelectedMentions([]);
-                }
+                setSelectedMentions([]);
             }
-        }, [mode, initialContent, initialPriority, initialPinnedFields, initialMentions, members?.documents]);
+        }, [mode]); // Only depend on mode
 
         
         const insertMention = (userId: string, username: string) => {
