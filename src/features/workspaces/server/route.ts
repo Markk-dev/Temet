@@ -14,7 +14,7 @@ import { createWorkspacesSchema, updateWorkspacesSchema } from '../schemas';
 import { endOfMonth, startOfMonth, subMonths } from"date-fns";
 import { createAdminClient } from '@/lib/appwrite';
 
-import { pusher } from "@/lib/pusher";
+import { pusherServer } from "@/lib/pusher";
 
 import { DATABASE_ID, WORKSPACES_ID, IMAGES_BUCKET_ID, PROJECT_ENDPOINT, APPWRITE_PROJECT, MEMBERS_ID, TASKS_ID } from '@/config';
 import { TaskStatus } from '@/features/tasks/types';
@@ -148,7 +148,7 @@ const app = new Hono()
         role: MemberRole.ADMIN,
       }
     );
-    await pusher.trigger("workspaces", "workspace-created", { workspace });
+    // await pusherServer.trigger("workspaces", "workspace-created", { workspace });
     return c.json({ data: workspace });
   }
 )
@@ -205,7 +205,7 @@ const app = new Hono()
         
         }
       );
-      await pusher.trigger("workspaces", "workspace-updated", { workspace });
+      // await pusherServer.trigger("workspaces", "workspace-updated", { workspace });
       return c.json({ data: workspace });
     }
   )
@@ -255,7 +255,7 @@ const app = new Hono()
         WORKSPACES_ID,
         workspaceId,
       );
-      await pusher.trigger("workspaces", "workspace-deleted", { workspaceId });
+      // await pusherServer.trigger("workspaces", "workspace-deleted", { workspaceId });
 
       return c.json({data : { $id: workspaceId} })
     }
@@ -287,7 +287,7 @@ const app = new Hono()
           inviteCode: generateInviteCode(6),
         }
       );
-      await pusher.trigger("workspaces", "workspace-invite-reset", { workspace });
+      // await pusherServer.trigger("workspaces", "workspace-invite-reset", { workspace });
 
       return c.json({data : workspace})
     }
@@ -334,7 +334,7 @@ const app = new Hono()
           role: MemberRole.MEMBER,
         },
       );
-      await pusher.trigger("workspaces", "workspace-joined", { workspaceId, userId: user.$id });
+      // await pusherServer.trigger("workspaces", "workspace-joined", { workspaceId, userId: user.$id });
 
       return c.json({ data: workspace });
     }

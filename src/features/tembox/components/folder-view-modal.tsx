@@ -236,7 +236,7 @@ export const FolderViewModal = () => {
               <div className={`p-2 rounded-lg ${colorClasses.bg} ${colorClasses.border}`}>
                 <Folder className={`size-6 ${colorClasses.icon}`} />
               </div>
-              <div>
+              <div className="flex flex-col gap-y-1.5 pb-4">
                 <CardTitle className="text-xl font-bold text-gray-900">
                   {selectedFolder?.folderName || "Folder"}
                 </CardTitle>

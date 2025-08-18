@@ -11,7 +11,7 @@ import { getFileViewUrl, extractFileIdFromUrl } from '@/lib/utils';
 import { Project } from '../types';
 import { createAdminClient } from '@/lib/appwrite';
 
-import { pusher } from "@/lib/pusher";
+import { pusherServer } from "@/lib/pusher";
 import { endOfMonth, startOfMonth, subMonths } from"date-fns";
 import { TaskStatus } from '@/features/tasks/types';
 
@@ -68,7 +68,7 @@ const app = new  Hono()
             }
           );
 
-          await pusher.trigger("projects", "project-created", { project });
+          // await pusherServer.trigger("projects", "project-created", { project });
           return c.json({ data: project });
         }
     )
@@ -192,7 +192,7 @@ const app = new  Hono()
           
           }
         );
-        await pusher.trigger("projects", "project-updated", { project });
+        // await pusherServer.trigger("projects", "project-updated", { project });
         return c.json({ data: project });
       }
     )
@@ -268,7 +268,7 @@ const app = new  Hono()
           PROJECTS_ID,
           projectId,
         );
-        await pusher.trigger("projects", "project-deleted", { projectId });
+        // await pusherServer.trigger("projects", "project-deleted", { projectId });
   
         return c.json({data : { $id: existingProject.$id} })
       }

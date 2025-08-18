@@ -57,34 +57,37 @@ export const TaskDescription = ({ task, assignee }: TaskDescriptionProps) => {
         <div className="p-4 border rounded-lg">
             <div className="flex items-center justify-between">
                 <p className="text-lg font-semibold">Task Description</p>
-                <Button onClick={() => setIsEditing((prev) => !prev)} variant="secondary" size="sm" disabled={!canEdit}>
-                    {isEditing ? (
-                      <XIcon className="size-4 mr-2"/>
-                    ) : (
-                       <PencilIcon className="size-4 mr-2"/>
+                <div className="flex items-center gap-2">
+                    {isEditing && (
+                        <Button 
+                            onClick={handleSave} 
+                            size="sm" 
+                            variant="primary"
+                            disabled={isPending}
+                        >   
+                            {isPending ? "Saving..." : "Save Changes"}
+                        </Button>
                     )}
-                    {isEditing ? "Cancel" : "Edit"}
-                </Button>
+                    <Button onClick={() => setIsEditing((prev) => !prev)} variant="secondary" size="sm" disabled={!canEdit}>
+                        {isEditing ? (
+                          <XIcon className="size-4 mr-2"/>
+                        ) : (
+                           <PencilIcon className="size-4 mr-2"/>
+                        )}
+                        {isEditing ? "Cancel" : "Edit"}
+                    </Button>
+                </div>
             </div>
             <DottedSeparator className="my-4"/>
             {isEditing ? (
-                <div className="flex flex-col gap-4">
-                    <Textarea
-                        placeholder="Add a description"
-                        value={value}
-                        rows={4}
-                        onChange={(e) => setValue(e.target.value)}
-                        disabled={isPending}
-                    />
-                    <Button
-                        onClick={handleSave}
-                        size="sm"
-                        className="w-fit ml-auto"
-                        disabled={isPending}
-                    >   
-                    {isPending ? "Saving..." : "Save Changes"}
-                    </Button>
-                </div>
+                <Textarea
+                    placeholder="Add a description"
+                    value={value}
+                    rows={2}
+                    onChange={(e) => setValue(e.target.value)}
+                    disabled={isPending}
+                    className="resize-none h-16 overflow-y-auto"
+                />
             ) : (
                 <div>
                     {task.description || (

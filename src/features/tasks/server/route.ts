@@ -13,7 +13,7 @@ import { DATABASE_ID, MEMBERS_ID, PROJECTS_ID, TASKS_ID } from "@/config";
 
 import { createAdminClient } from "@/lib/appwrite";
 import { SessionMiddleware } from "@/lib/session-middleware";
-import { pusher } from "@/lib/pusher";
+import { pusherServer } from "@/lib/pusher";
 
 const app = new Hono()
   .delete(
@@ -75,7 +75,7 @@ const app = new Hono()
             taskId,
         );
 
-        await pusher.trigger("tasks", "task-deleted", { taskId, task: { ...task, assignees, project } });
+        // await pusherServer.trigger("tasks", "task-deleted", { taskId, task: { ...task, assignees, project } });
 
         return c.json({data: { $id: task.$id} });
     }
@@ -303,7 +303,7 @@ const app = new Hono()
                 );
             } catch {}
         }
-        await pusher.trigger("tasks", "task-created", { task: { ...task, assignees, project } });
+        // await pusherServer.trigger("tasks", "task-created", { task: { ...task, assignees, project } });
 
         return c.json({data: { ...task, assignees, project }})
     }
@@ -425,7 +425,7 @@ const app = new Hono()
                 );
             } catch {}
         }
-        await pusher.trigger("tasks", "task-updated", { task: { ...task, assignees, project } });
+        // await pusherServer.trigger("tasks", "task-updated", { task: { ...task, assignees, project } });
 
         return c.json({data: { ...task, assignees, project }})
     }
@@ -641,7 +641,7 @@ const app = new Hono()
             };
         });
 
-        await pusher.trigger("tasks", "tasks-bulk-updated", { tasks: populatedTasks });
+        // await pusherServer.trigger("tasks", "tasks-bulk-updated", { tasks: populatedTasks });
 
         return c.json({ data: updatedTasks });
     }

@@ -12,6 +12,7 @@ import { useGetFiles } from "../hooks/use-files";
 import { useFolderViewModal } from "../hooks/use-folder-view-modal";
 import { useTemboxModal } from "../hooks/use-tembox-modal";
 import { useFileUploadModal } from "../hooks/use-file-upload-modal";
+import { useStorageUsage } from "../hooks/use-storage-usage";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -73,6 +74,7 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
     const { open: openFileUpload } = useFileUploadModal();
     const { data: foldersData, isLoading: isLoadingFolders, error } = useGetFolders();
     const { data: filesData } = useGetFiles(); // Get all files for search
+    const { data: storageUsage, isLoading: isLoadingStorage } = useStorageUsage();
     const [isDragOver, setIsDragOver] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -110,6 +112,7 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
+    
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         setIsDragOver(true);
@@ -199,6 +202,22 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
             e.target.value = '';
         }
     }, [openFileUpload]);
+
+    if (isLoadingFolders) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-8 text-red-500">
+                Failed to load folders. Please try again.
+            </div>
+        );
+    }
 
     return (
         <Card className="w-full h-full border-none shadow-none">
@@ -302,7 +321,7 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
                                 <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
                             </div>
                         ) : hasSearchResults ? (
-                            /* Search Results */
+                           
                             <div className="space-y-4">
                                 {/* Folders in search results */}
                                 {filteredFolders.length > 0 && (
@@ -342,21 +361,21 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
                                 )}
                             </div>
                         ) : hasNoResults ? (
-                            /* No Search Results */
+                           
                             <div className="text-center py-8 text-gray-500">
                                 <Search className="size-12 mx-auto mb-3 text-gray-300" />
                                 <p className="text-sm">No results found for "{searchQuery}"</p>
                                 <p className="text-xs text-gray-400 mt-1">Try searching with different keywords</p>
                             </div>
                         ) : filteredFolders.length > 0 ? (
-                            /* Normal Folders Display */
+                           
                             <div className="grid grid-cols-2 gap-4">
                                 {filteredFolders.map((folder) => (
                                     <FolderCard key={folder.$id} folder={folder} />
                                 ))}
                             </div>
                         ) : (
-                            /* Empty State */
+                           
                             <div className="text-center py-8 text-gray-500">
                                 <Folder className="size-12 mx-auto mb-3 text-gray-300" />
                                 <p className="text-sm">No folders created yet</p>
@@ -373,13 +392,35 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
                                 <h3 className="font-medium text-blue-900">Workspace Usage</h3>
-                                <p className="text-xs text-blue-700">2.3 GB of 15 GB used</p>
+                                {isLoadingStorage ? (
+                                    <div className="flex items-center gap-2">
+                                        <Loader2 className="size-3 animate-spin text-blue-600" />
+                                        <p className="text-xs text-blue-700">Loading storage info...</p>
+                                    </div>
+                                ) : storageUsage ? (
+                                    <p className="text-xs text-blue-700">
+                                        {formatFileSize(storageUsage.used)} of {formatFileSize(storageUsage.total)} used
+                                    </p>
+                                ) : (
+                                    <p className="text-xs text-blue-700">Unable to load storage info</p>
+                                )}
                             </div>
                             <div className="text-right">
                                 <div className="w-40 h-2 bg-blue-200 rounded-full overflow-hidden">
-                                    <div className="w-1/6 h-full bg-blue-500"></div>
+                                    {storageUsage && (
+                                        <div 
+                                            className="h-full bg-blue-500 transition-all duration-300"
+                                            style={{ width: `${storageUsage.percentage}%` }}
+                                        ></div>
+                                    )}
                                 </div>
-                                <p className="text-xs text-blue-600 mt-1">15% used</p>
+                                {isLoadingStorage ? (
+                                    <p className="text-xs text-blue-600 mt-1">Loading...</p>
+                                ) : storageUsage ? (
+                                    <p className="text-xs text-blue-600 mt-1">{storageUsage.percentage}% used</p>
+                                ) : (
+                                    <p className="text-xs text-blue-600 mt-1">--</p>
+                                )}
                             </div>
                         </div>
                     </div>
