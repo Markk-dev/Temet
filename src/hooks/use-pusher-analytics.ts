@@ -3,12 +3,24 @@ import { useQueryClient } from '@tanstack/react-query';
 import Pusher from 'pusher-js';
 
 
+declare global {
+  interface Window {
+    pusherAnalyticsInstance?: Pusher;
+  }
+}
+
 export const usePusherAnalytics = (workspaceId?: string) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-
     if (typeof window === 'undefined') return;
+    
+    
+    if (window.pusherAnalyticsInstance && 
+        window.pusherAnalyticsInstance.connection.state === 'connected') {
+      console.log('Pusher Analytics: Already connected, skipping new connection');
+      return;
+    }
     
     const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
     const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
@@ -18,11 +30,22 @@ export const usePusherAnalytics = (workspaceId?: string) => {
       return;
     }
 
+    
+    if (window.pusherAnalyticsInstance) {
+      try {
+        window.pusherAnalyticsInstance.disconnect();
+      } catch (error) {
+        console.log('Pusher Analytics: Cleaned up existing disconnected instance');
+      }
+    }
+
     const pusher = new Pusher(pusherKey, {
       cluster: pusherCluster,
       enabledTransports: ['ws', 'wss'],
     });
     
+    
+    window.pusherAnalyticsInstance = pusher;
 
     pusher.connection.bind('connected', () => {
       console.log('Pusher Analytics: Connected successfully');
@@ -83,10 +106,21 @@ export const usePusherAnalytics = (workspaceId?: string) => {
     });
 
     return () => {
-      channel.unbind_all();
-      channel.unsubscribe();
-      pusher.disconnect();
-      console.log('Pusher Analytics: Disconnected');
+      try {
+        channel.unbind_all();
+        channel.unsubscribe();
+        
+        
+        if (window.pusherAnalyticsInstance === pusher) {
+          pusher.disconnect();
+          window.pusherAnalyticsInstance = undefined;
+          console.log('Pusher Analytics: Disconnected and cleaned up global instance');
+        } else {
+          console.log('Pusher Analytics: Local instance cleaned up (global instance preserved)');
+        }
+      } catch (error) {
+        console.log('Pusher Analytics: Cleanup completed with existing connection');
+      }
     };
   }, [queryClient, workspaceId]);
 };

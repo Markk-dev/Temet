@@ -37,6 +37,11 @@
         initialContent?: string; 
         initialPriority?: "LOWEST" | "LOW" | "MEDIUM" | "HIGH" | "HIGHEST" | null; 
         initialPinnedFields?: string[]; 
+        initialPinnedFieldValues?: {
+            assignee?: any;
+            status?: string;
+            dueDate?: string;
+        };
         initialMentions?: string[]; 
         mode?: "create" | "edit" | "reply"; 
     }
@@ -94,6 +99,7 @@
     initialContent = "",
     initialPriority = null,
     initialPinnedFields = [],
+    initialPinnedFieldValues,
     initialMentions = [],
     mode = "create"
 }: EnhancedCommentFormProps) => {
@@ -103,6 +109,7 @@
         assignee?: boolean;
         dueDate?: boolean;
         status?: boolean;
+        statusValue?: string;
     }>(() => {
         const initial: any = {};
         initialPinnedFields.forEach(field => {
@@ -124,7 +131,8 @@
         const { mutate: updateComment, isPending: isUpdating } = useUpdateComment({ taskId });
         const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-        // Simple initialization without complex dependencies
+        
+        
         useEffect(() => {
             if (mode === "edit") {
                 setContent(initialContent || "");
@@ -136,10 +144,24 @@
                         initialPinnedFieldsState[field] = true;
                     });
                 }
+                
+                
+                if (initialPinnedFieldValues) {
+                    if (initialPinnedFieldValues.status) {
+                        initialPinnedFieldsState.statusValue = initialPinnedFieldValues.status;
+                    }
+                    if (initialPinnedFieldValues.assignee) {
+                        initialPinnedFieldsState.assigneeValue = initialPinnedFieldValues.assignee;
+                    }
+                    if (initialPinnedFieldValues.dueDate) {
+                        initialPinnedFieldsState.dueDateValue = initialPinnedFieldValues.dueDate;
+                    }
+                }
+                
                 setPinnedFields(initialPinnedFieldsState);
                 setSelectedMentions([]);
             }
-        }, [mode]); // Only depend on mode
+        }, [mode, initialContent, initialPriority, initialPinnedFields, initialPinnedFieldValues]);
 
         
         const insertMention = (userId: string, username: string) => {
@@ -210,26 +232,54 @@
         const handleSubmit = (e: React.FormEvent) => {
             e.preventDefault();
             
-            if (!content.trim()) return;
+            console.log('Form submitted:', { mode, commentId, content: content.trim() });
+            
+            if (!content.trim() && mode !== "edit") return;
 
             const commentData = {
                 taskId,
                 workspaceId,
                 content: content.trim(),
                 priority: selectedPriority || undefined,
-                pinnedFields: Object.keys(pinnedFields).filter(key => pinnedFields[key as keyof typeof pinnedFields]),
+                pinnedFields: ['assignee', 'status', 'dueDate'].filter(field => pinnedFields[field as keyof typeof pinnedFields]),
+                pinnedFieldValues: {
+                    assignee: pinnedFields.assignee ? taskDetails?.assignee : undefined,
+                    status: pinnedFields.status ? pinnedFields.statusValue : undefined,
+                    dueDate: pinnedFields.dueDate ? taskDetails?.dueDate : undefined,
+                },
                 mentions: selectedMentions.map(m => m.userId), 
             };
 
             if (mode === "edit" && commentId) {
+                console.log('Updating comment:', commentId, 'with data:', {
+                    content: content.trim() || initialContent || "",
+                    priority: selectedPriority || undefined,
+                    pinnedFields: ['assignee', 'status', 'dueDate'].filter(field => pinnedFields[field as keyof typeof pinnedFields]),
+                    pinnedFieldValues: {
+                        assignee: pinnedFields.assignee ? taskDetails?.assignee : undefined,
+                        status: pinnedFields.status ? pinnedFields.statusValue : undefined,
+                        dueDate: pinnedFields.dueDate ? taskDetails?.dueDate : undefined,
+                    },
+                });
+                
+                if (!commentId) {
+                    console.error('No commentId provided for edit mode');
+                    toast.error("Cannot edit comment: Missing comment ID");
+                    return;
+                }
                 
                 updateComment(
                     { 
                         commentId, 
                         data: { 
-                            content: content.trim(),
+                            content: content.trim() || initialContent || "",
                             priority: selectedPriority || undefined,
-                            pinnedFields: Object.keys(pinnedFields).filter(key => pinnedFields[key as keyof typeof pinnedFields]),
+                            pinnedFields: ['assignee', 'status', 'dueDate'].filter(field => pinnedFields[field as keyof typeof pinnedFields]),
+                            pinnedFieldValues: {
+                                assignee: pinnedFields.assignee ? taskDetails?.assignee : undefined,
+                                status: pinnedFields.status ? pinnedFields.statusValue : undefined,
+                                dueDate: pinnedFields.dueDate ? taskDetails?.dueDate : undefined,
+                            },
                         } 
                     },
                     {
@@ -241,7 +291,8 @@
                             setSelectedMentions([]); 
                             onClose?.();
                         },
-                        onError: () => {
+                        onError: (error) => {
+                            console.error('Update comment error:', error);
                             toast.error("Failed to update comment. Please try again.");
                         }
                     }
@@ -276,7 +327,7 @@
         ) || [];
 
         
-        const statusOptions = ["Todo", "In Progress", "Done", "Cancelled"];
+        const statusOptions = ["Done", "Stuck", "Working on it", "Waiting", "Cancelled"];
 
         return (
             <AnimatePresence>
@@ -339,7 +390,7 @@
                                         <div className="flex-1 relative min-w-0">
                                             <form onSubmit={handleSubmit} className="space-y-4">
                                                 {/* Pinned Fields Section - Always visible */}
-                                                <div className="bg-blue-50 border border-blue-200 border-l-2 rounded-lg p-3 space-y-2">
+                                                <div className="bg-blue-50 border border-blue-200 border-l-2 rounded-lg p-3 py-5 space-y-2">
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-2 text-sm text-blue-700">
                                                             <Flag className="h-3 w-3" />
@@ -359,7 +410,7 @@
                                                         {pinnedFields.assignee && taskDetails?.assignee && (
                                                             <Badge variant="secondary" className="text-[10px] flex items-center gap-1 bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded">
                                                                 <span className="font-medium">Assignee:</span>
-                                                                <span>{taskDetails.assignee.name}</span>
+                                                                <span>{Array.isArray(taskDetails.assignee) ? taskDetails.assignee.map((a: any) => a.name).join(', ') : taskDetails.assignee.name}</span>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => setPinnedFields(prev => ({ ...prev, assignee: false }))}
@@ -382,13 +433,13 @@
                                                                 </button>
                                                             </Badge>
                                                         )}
-                                                        {pinnedFields.status && taskDetails?.status && (
+                                                        {pinnedFields.status && (
                                                             <Badge variant="secondary" className="text-[10px] flex items-center gap-1 bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded">
                                                                 <span className="font-medium">Status:</span>
-                                                                <span>{taskDetails.status}</span>
+                                                                <span>{pinnedFields.statusValue || 'Custom Status'}</span>
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => setPinnedFields(prev => ({ ...prev, status: false }))}
+                                                                    onClick={() => setPinnedFields(prev => ({ ...prev, status: false, statusValue: undefined }))}
                                                                     className="ml-1 hover:text-red-500 text-purple-600 hover:bg-red-50 rounded-full p-0.5"
                                                                 >
                                                                     <X className="h-3 w-3" />
@@ -502,27 +553,47 @@
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-sm text-gray-600 whitespace-nowrap">Pin fields:</span>
                                                     <div className="flex gap-1 flex-wrap">
-                                                        {taskDetails?.assignee && (
-                                                            <div className="relative dropdown-container">
-                                                                <Button
-                                                                    type="button"
-                                                                    variant={pinnedFields.assignee ? "secondary" : "outline"}
-                                                                    size="sm"
-                                                                    onClick={() => handleFieldPress('assignee')}
-                                                                    className="h-8 px-2 flex items-center gap-1 transition-colors hover:bg-gray-50"
-                                                                >
-                                                                    Assignee
-                                                                    <ChevronDown className="h-3 w-3" />
-                                                                </Button>
-                                                                
-                                                                {/* Assignee Dropdown */}
-                                                                {showAssigneeDropdown && (
-                                                                    <div className="dropdown-container absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                                                                        <div className="p-1">
-                                                                            <div className="text-xs text-gray-500 p-2">Select assignee:</div>
-                                                                            {members?.documents?.map((member) => (
+                                                        {/* Always show assignee field - will be populated with actual task assignees */}
+                                                        <div className="relative dropdown-container">
+                                                            <Button
+                                                                type="button"
+                                                                variant={pinnedFields.assignee ? "secondary" : "outline"}
+                                                                size="sm"
+                                                                onClick={() => handleFieldPress('assignee')}
+                                                                className="h-8 px-2 flex items-center gap-1 transition-colors hover:bg-gray-50"
+                                                            >
+                                                                Assignee
+                                                                <ChevronDown className="h-3 w-3" />
+                                                            </Button>
+                                                            
+                                                            {/* Assignee Dropdown */}
+                                                            {showAssigneeDropdown && (
+                                                                <div className="dropdown-container absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                                                    <div className="p-1">
+                                                                        <div className="text-xs text-gray-500 p-2">Select assignee:</div>
+                                                                        {taskDetails?.assignee ? (
+                                                                            
+                                                                            Array.isArray(taskDetails.assignee) ? 
+                                                                                taskDetails.assignee.map((assignee: any) => (
+                                                                                    <button
+                                                                                        key={assignee.$id}
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            setPinnedFields(prev => ({ ...prev, assignee: true }));
+                                                                                            setShowAssigneeDropdown(false);
+                                                                                        }}
+                                                                                        className="w-full flex items-center gap-2 p-2 hover:bg-gray-100 rounded text-left"
+                                                                                    >
+                                                                                        <Avatar className="h-5 w-5">
+                                                                                            <AvatarFallback className="text-xs">
+                                                                                                {assignee.name?.charAt(0) || assignee.email?.charAt(0)}
+                                                                                            </AvatarFallback>
+                                                                                        </Avatar>
+                                                                                        <div className="text-sm">{assignee.name}</div>
+                                                                                    </button>
+                                                                                ))
+                                                                            : (
                                                                                 <button
-                                                                                    key={member.$id}
                                                                                     type="button"
                                                                                     onClick={() => {
                                                                                         setPinnedFields(prev => ({ ...prev, assignee: true }));
@@ -532,66 +603,66 @@
                                                                                 >
                                                                                     <Avatar className="h-5 w-5">
                                                                                         <AvatarFallback className="text-xs">
-                                                                                            {member.name?.charAt(0) || member.email?.charAt(0)}
+                                                                                            {taskDetails.assignee.name?.charAt(0) || taskDetails.assignee.email?.charAt(0)}
                                                                                         </AvatarFallback>
                                                                                     </Avatar>
-                                                                                    <div className="text-sm">{member.name}</div>
+                                                                                    <div className="text-sm">{taskDetails.assignee.name}</div>
                                                                                 </button>
-                                                                            ))}
-                                                                        </div>
+                                                                            )
+                                                                        ) : (
+                                                                            <div className="text-sm text-gray-500 p-2">No assignees for this task</div>
+                                                                        )}
                                                                     </div>
-                                                                )}
-                                                            </div>
-                                                        )}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                         
-                                                        {taskDetails?.dueDate && (
+                                                        {/* Always show due date field */}
+                                                        <Button
+                                                            type="button"
+                                                            variant={pinnedFields.dueDate ? "secondary" : "outline"}
+                                                            size="sm"
+                                                            onClick={() => setPinnedFields(prev => ({ ...prev, dueDate: !prev.dueDate }))}
+                                                            className="h-8 px-2 transition-colors hover:bg-gray-50"
+                                                        >
+                                                            Due Date
+                                                        </Button>
+                                                        
+                                                        {/* Always show status field */}
+                                                        <div className="relative dropdown-container">
                                                             <Button
                                                                 type="button"
-                                                                variant={pinnedFields.dueDate ? "secondary" : "outline"}
+                                                                variant={pinnedFields.status ? "secondary" : "outline"}
                                                                 size="sm"
-                                                                onClick={() => setPinnedFields(prev => ({ ...prev, dueDate: !prev.dueDate }))}
-                                                                className="h-8 px-2 transition-colors hover:bg-gray-50"
+                                                                onClick={() => handleFieldPress('status')}
+                                                                className="h-8 px-2 flex items-center gap-1 transition-colors hover:bg-gray-50"
                                                             >
-                                                                Due Date
+                                                                Status
+                                                                <ChevronDown className="h-3 w-3" />
                                                             </Button>
-                                                        )}
-                                                        
-                                                        {taskDetails?.status && (
-                                                            <div className="relative dropdown-container">
-                                                                <Button
-                                                                    type="button"
-                                                                    variant={pinnedFields.status ? "secondary" : "outline"}
-                                                                    size="sm"
-                                                                    onClick={() => handleFieldPress('status')}
-                                                                    className="h-8 px-2 flex items-center gap-1 transition-colors hover:bg-gray-50"
-                                                                >
-                                                                    Status
-                                                                    <ChevronDown className="h-3 w-3" />
-                                                                </Button>
-                                                                
-                                                                {/* Status Dropdown */}
-                                                                {showStatusDropdown && (
-                                                                    <div className="dropdown-container absolute top-full left-0 mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                                                                        <div className="p-1">
-                                                                            <div className="text-xs text-gray-500 p-2">Select status:</div>
-                                                                            {statusOptions.map((status) => (
-                                                                                <button
-                                                                                    key={status}
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        setPinnedFields(prev => ({ ...prev, status: true }));
-                                                                                        setShowStatusDropdown(false);
-                                                                                    }}
-                                                                                    className="w-full text-left p-2 hover:bg-gray-100 rounded text-sm"
-                                                                                >
-                                                                                    {status}
-                                                                                </button>
-                                                                            ))}
-                                                                        </div>
+                                                            
+                                                            {/* Status Dropdown */}
+                                                            {showStatusDropdown && (
+                                                                <div className="dropdown-container absolute top-full left-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                                                    <div className="p-1">
+                                                                        <div className="text-xs text-gray-500 p-2">Select status:</div>
+                                                                        {statusOptions.map((status) => (
+                                                                            <button
+                                                                                key={status}
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    setPinnedFields(prev => ({ ...prev, status: true, statusValue: status }));
+                                                                                    setShowStatusDropdown(false);
+                                                                                }}
+                                                                                className="w-full text-left p-2 hover:bg-gray-100 rounded text-xs font-medium"
+                                                                            >
+                                                                                {status}
+                                                                            </button>
+                                                                        ))}
                                                                     </div>
-                                                                )}
-                                                            </div>
-                                                        )}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -601,10 +672,10 @@
                                                         type="submit"
                                                         variant="primary"
                                                         size="sm"
-                                                        disabled={isPending || isUpdating || !content.trim()}
+                                                        disabled={isPending || isUpdating || (mode !== "edit" && !content.trim())}
                                                     >
                                                         <Send className="h-4 w-4 mr-1" />
-                                                        {isPending || isUpdating ? "Sending..." : "Comment"}
+                                                        {isPending || isUpdating ? "Sending..." : mode === "edit" ? "Update" : "Comment"}
                                                     </Button>
                                                 </div>
                                             </form>

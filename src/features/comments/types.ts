@@ -8,6 +8,11 @@ export interface Comment extends Models.Document {
     parentId?: string;
     priority?: "LOWEST" | "LOW" | "MEDIUM" | "HIGH" | "HIGHEST";
     pinnedFields?: string[];
+    pinnedFieldValues?: {
+        assignee?: any;
+        status?: string;
+        dueDate?: string;
+    };
     mentions?: string[];
     replies?: Comment[];
     author?: {

@@ -8,7 +8,7 @@ import { createCommentSchema, updateCommentSchema } from "../schemas";
 import { DATABASE_ID } from "@/config";
 import { createAdminClient } from "@/lib/appwrite";
 import { SessionMiddleware } from "@/lib/session-middleware";
-// import { pusherServer, getCommentsChannel, COMMENT_EVENTS } from "@/lib/pusher";
+import { pusherServer, getCommentsChannel, COMMENT_EVENTS } from "@/lib/pusher";
 import { Comment } from "../types";
 
 const app = new Hono()
@@ -54,8 +54,21 @@ const app = new Hono()
         comments.documents.map(async (comment: any) => {
           try {
             const author = await users.get(comment.authorId);
+            
+            // Parse pinnedFieldValues if it exists
+            let parsedPinnedFieldValues = null;
+            if (comment.pinnedFieldValues) {
+              try {
+                parsedPinnedFieldValues = JSON.parse(comment.pinnedFieldValues);
+              } catch (e) {
+                // If parsing fails, keep the original value
+                parsedPinnedFieldValues = comment.pinnedFieldValues;
+              }
+            }
+            
             return {
               ...comment,
+              pinnedFieldValues: parsedPinnedFieldValues,
               author: {
                 name: author.name || author.email,
                 email: author.email,
@@ -102,7 +115,7 @@ const app = new Hono()
     async (c) => {
       const user = c.get("user");
       const databases = c.get("databases");
-      const { taskId, workspaceId, content, parentId, priority, pinnedFields, mentions } = c.req.valid("json");
+      const { taskId, workspaceId, content, parentId, priority, pinnedFields, pinnedFieldValues, mentions } = c.req.valid("json");
 
       const member = await getMembers({
         databases,
@@ -129,6 +142,7 @@ const app = new Hono()
           parentId: parentId || null,
           priority: priority || null,
           pinnedFields: pinnedFields || [],
+          pinnedFieldValues: pinnedFieldValues ? JSON.stringify(pinnedFieldValues) : null,
           mentions: mentions || [],
         }
       );
@@ -146,11 +160,11 @@ const app = new Hono()
       };
 
       // Trigger real-time event for new comment (non-blocking)
-      // pusherServer.trigger(
-      //   getCommentsChannel(taskId),
-      //   COMMENT_EVENTS.CREATED,
-      //   commentWithAuthor
-      // ).catch(console.error); // Handle errors silently
+      pusherServer.trigger(
+        getCommentsChannel(taskId),
+        COMMENT_EVENTS.CREATED,
+        commentWithAuthor
+      ).catch(console.error); // Handle errors silently
 
       return c.json({ data: commentWithAuthor });
     }
@@ -177,19 +191,26 @@ const app = new Hono()
         return c.json({ error: "Unauthorized" }, 401);
       }
 
+      const { content, priority, pinnedFields, pinnedFieldValues } = updateData;
+
       const updatedComment = await adminDatabases.updateDocument(
         DATABASE_ID,
         "comments",
         commentId,
-        updateData,
+        {
+          content: content || comment.content,
+          priority: priority || comment.priority,
+          pinnedFields: pinnedFields || comment.pinnedFields,
+          pinnedFieldValues: pinnedFieldValues ? JSON.stringify(pinnedFieldValues) : comment.pinnedFieldValues,
+        },
       );
 
       // Trigger real-time event for updated comment (non-blocking)
-      // pusherServer.trigger(
-      //   getCommentsChannel(comment.taskId),
-      //   COMMENT_EVENTS.UPDATED,
-      //   updatedComment
-      // ).catch(console.error); // Handle errors silently
+      pusherServer.trigger(
+        getCommentsChannel(comment.taskId),
+        COMMENT_EVENTS.UPDATED,
+        updatedComment
+      ).catch(console.error); // Handle errors silently
 
       return c.json({ data: updatedComment });
     }
@@ -221,20 +242,27 @@ const app = new Hono()
         [Query.equal("parentId", commentId)],
       );
 
+      // Collect all reply IDs that will be deleted
+      const deletedReplyIds: string[] = [];
+      
       // Delete all replies
       for (const reply of replies.documents) {
+        deletedReplyIds.push(reply.$id);
         await adminDatabases.deleteDocument(DATABASE_ID, "comments", reply.$id);
       }
 
       // Delete the main comment
       await adminDatabases.deleteDocument(DATABASE_ID, "comments", commentId);
 
-      // Trigger real-time event for deleted comment (non-blocking)
-      // pusherServer.trigger(
-      //   getCommentsChannel(comment.taskId),
-      //   COMMENT_EVENTS.DELETED,
-      //   { commentId }
-      // ).catch(console.error); // Handle errors silently
+      // Trigger real-time event for deleted comment with cascade info
+      pusherServer.trigger(
+        getCommentsChannel(comment.taskId),
+        COMMENT_EVENTS.DELETED,
+        { 
+          commentId,
+          deletedReplyIds 
+        }
+      ).catch(console.error); // Handle errors silently
 
       return c.json({ success: true });
     }

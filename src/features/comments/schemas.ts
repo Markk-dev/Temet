@@ -7,6 +7,11 @@ export const createCommentSchema = z.object({
     parentId: z.string().optional(),
     priority: z.enum(["LOWEST", "LOW", "MEDIUM", "HIGH", "HIGHEST"]).optional(),
     pinnedFields: z.array(z.string()).optional(),
+    pinnedFieldValues: z.object({
+        assignee: z.any().optional(),
+        status: z.string().optional(),
+        dueDate: z.string().optional(),
+    }).optional(),
     mentions: z.array(z.string()).optional(),
 });
 
@@ -14,6 +19,11 @@ export const updateCommentSchema = z.object({
     content: z.string().min(1, "Comment content is required").max(2048, "Comment too long"),
     priority: z.enum(["LOWEST", "LOW", "MEDIUM", "HIGH", "HIGHEST"]).optional(),
     pinnedFields: z.array(z.string()).optional(),
+    pinnedFieldValues: z.object({
+        assignee: z.any().optional(),
+        status: z.string().optional(),
+        dueDate: z.string().optional(),
+    }).optional(),
 });
 
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;

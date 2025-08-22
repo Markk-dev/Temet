@@ -84,10 +84,19 @@ export const CommentItem = ({
     const getPinnedFieldValue = (field: string) => {
         switch (field) {
             case 'assignee':
+                if (comment.pinnedFieldValues?.assignee) {
+                    if (Array.isArray(comment.pinnedFieldValues.assignee)) {
+                        return comment.pinnedFieldValues.assignee.map((a: any) => a.name).join(', ');
+                    }
+                    return comment.pinnedFieldValues.assignee.name;
+                }
                 return taskDetails?.assignee?.name || 'Unassigned';
             case 'status':
-                return taskDetails?.status || 'No Status';
+                return comment.pinnedFieldValues?.status || taskDetails?.status || 'No Status';
             case 'dueDate':
+                if (comment.pinnedFieldValues?.dueDate) {
+                    return new Date(comment.pinnedFieldValues.dueDate).toLocaleDateString();
+                }
                 return taskDetails?.dueDate ? new Date(taskDetails.dueDate).toLocaleDateString() : 'No Due Date';
             default:
                 return field;
@@ -95,16 +104,16 @@ export const CommentItem = ({
     };
 
     return (
-        <div className={`space-y-3 ${level > 0 ? 'ml-6 border-l-2 border-gray-200 pl-4' : ''}`}>
+        <div className={`space-y-3 ${level > 0 && level <= 2 ? 'ml-6 border-l-2 border-gray-200 pl-4' : ''}`}>
             <div className="flex items-start space-x-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarFallback>
-                        <User className="h-4 w-4" />
+                    <AvatarFallback className="bg-gray-100 text-gray-600 text-xs">
+                        {comment.author?.name?.charAt(0) || "U"}
                     </AvatarFallback>
                 </Avatar>
                 
                 <div className="flex-1 space-y-2">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm">
                             {comment.author?.name || "Unknown User"}
                         </span>
@@ -149,6 +158,7 @@ export const CommentItem = ({
                     </div>
                     
                     <div className="flex items-center space-x-2">
+                        {/* Show Reply button at all levels - no level restriction */}
                         <Button
                             size="sm"
                             variant="ghost"
@@ -187,6 +197,7 @@ export const CommentItem = ({
                 </div>
             </div>
             
+            {/* Render nested replies at all levels - but visual indentation capped at level 2 */}
             {comment.replies && comment.replies.length > 0 && (
                 <div className="space-y-3">
                     {comment.replies.map((reply) => (
@@ -197,6 +208,7 @@ export const CommentItem = ({
                             workspaceId={workspaceId}
                             taskDetails={taskDetails}
                             onReply={onReply}
+                            onEdit={onEdit}
                             level={level + 1}
                         />
                     ))}

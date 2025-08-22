@@ -35,8 +35,25 @@ export const EnhancedCommentsSection = ({
     const { data: comments, isLoading, error } = useGetComments(taskId, workspaceId);
     const commentsArray = comments?.data || [];
 
+    // Function to count all comments including nested replies
+    const getTotalCommentCount = (comments: Comment[]): number => {
+        let count = 0;
+        const countComments = (commentList: Comment[]) => {
+            commentList.forEach(comment => {
+                count++;
+                if (comment.replies && comment.replies.length > 0) {
+                    countComments(comment.replies);
+                }
+            });
+        };
+        countComments(comments);
+        return count;
+    };
+
+    const totalCommentCount = getTotalCommentCount(commentsArray);
+
     // Enable real-time comments synchronization
-    // useRealtimeComments(taskId, workspaceId);
+    useRealtimeComments(taskId, workspaceId);
 
     const handleOpenComment = () => {
         setIsCommentOpen(true);
@@ -73,9 +90,9 @@ export const EnhancedCommentsSection = ({
                     <div className="flex items-center gap-2">
                         <MessageSquare className="h-5 w-5" />
                         <h3 className="text-lg font-semibold">Comments</h3>
-                        {commentsArray.length > 0 && (
+                        {totalCommentCount > 0 && (
                             <span className="text-sm text-gray-500">
-                                ({commentsArray.length})
+                                ({totalCommentCount})
                             </span>
                         )}
                     </div>
@@ -129,9 +146,9 @@ export const EnhancedCommentsSection = ({
                         <div className="flex items-center gap-2">
                             <MessageSquare className="h-4 w-4" />
                             <h3 className="text-base font-semibold">Comments</h3>
-                            {commentsArray.length > 0 && (
+                            {totalCommentCount > 0 && (
                                 <span className="text-sm text-gray-500">
-                                    ({commentsArray.length})
+                                    ({totalCommentCount})
                                 </span>
                             )}
                         </div>
@@ -209,6 +226,7 @@ export const EnhancedCommentsSection = ({
                 initialContent={editComment?.content}
                 initialPriority={editComment?.priority}
                 initialPinnedFields={editComment?.pinnedFields}
+                initialPinnedFieldValues={editComment?.pinnedFieldValues}
                 initialMentions={editComment?.mentions}
                 mode="edit"
             />
