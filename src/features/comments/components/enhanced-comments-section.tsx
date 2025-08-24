@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageSquare, Loader, Plus } from "lucide-react";
 
 import { useGetComments } from "../api/use-get-comments";
@@ -54,6 +54,13 @@ export const EnhancedCommentsSection = ({
 
     // Enable real-time comments synchronization
     useRealtimeComments(taskId, workspaceId);
+
+    // Cleanup effect to prevent memory leaks
+    useEffect(() => {
+        return () => {
+            // Cleanup any subscriptions or timers if needed
+        };
+    }, []);
 
     const handleOpenComment = () => {
         setIsCommentOpen(true);

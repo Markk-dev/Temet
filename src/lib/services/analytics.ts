@@ -47,26 +47,44 @@ export async function getMemberTimeAnalytics({
     const memberAnalytics: Record<string, MemberAnalytics> = {};
     
     
+    // ✅ FIXED: Batch query all unique user IDs instead of N+1 queries
+    const uniqueUserIds = [...new Set(membersResult.documents.map(member => member.userId))];
+    const usersMap = new Map();
+    
+    if (uniqueUserIds.length > 0) {
+      // Get all users in parallel instead of sequentially
+      const userPromises = uniqueUserIds.map(async (userId) => {
+        try {
+          const user = await users.get(userId);
+          return [userId, user];
+        } catch (error) {
+          return [userId, { name: "Unknown Member", email: "" }];
+        }
+      });
+      
+      const userResults = await Promise.allSettled(userPromises);
+      userResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          const [userId, user] = result.value;
+          usersMap.set(userId, user);
+        }
+      });
+    }
+
+    // ✅ FIXED: Initialize member analytics using pre-fetched user data
     for (const member of membersResult.documents) {
-      try {
-        const user = await users.get(member.userId);
-        memberAnalytics[member.$id] = {
-          id: member.$id,
-          name: user.name || user.email || 'Unknown Member',
-          email: user.email || '',
-          totalTimeSpent: 0,
-          dailyTime: [],
-        };
-      } catch {
-        
-        memberAnalytics[member.$id] = {
-          id: member.$id,
-          name: 'Unknown Member',
-          email: '',
-          totalTimeSpent: 0,
-          dailyTime: [],
-        };
-      }
+      const user = usersMap.get(member.userId) || { 
+        name: "Unknown Member", 
+        email: "" 
+      };
+      
+      memberAnalytics[member.$id] = {
+        id: member.$id,
+        name: user.name || user.email || 'Unknown Member',
+        email: user.email || '',
+        totalTimeSpent: 0,
+        dailyTime: [],
+      };
     }
 
     

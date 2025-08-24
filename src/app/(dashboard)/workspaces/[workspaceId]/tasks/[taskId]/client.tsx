@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useGetTask } from "@/features/tasks/api/use-get-tasks";
 import { useTaskId } from "@/features/tasks/hooks/use-task-id";
 import { TaskBreadcrumbs } from "@/features/tasks/components/task-breadcrumbs";
@@ -15,6 +16,17 @@ export const TaskIdClient = () => {
     const  taskId = useTaskId();
     const { data, isLoading } = useGetTask({ taskId });
 
+    // Memoize task details to prevent infinite re-renders
+    // MUST be called before any conditional returns to maintain hook order
+    const taskDetails = useMemo(() => {
+        if (!data) return null;
+        return {
+            assignee: data.assignee,
+            dueDate: data.dueDate,
+            status: data.status,
+        };
+    }, [data?.assignee, data?.dueDate, data?.status]);
+
     if(isLoading){
         return <PageLoader/>
     }
@@ -22,13 +34,6 @@ export const TaskIdClient = () => {
     if(!data){
         return <PageError message="Task not found"/>
     }
-
-    // Prepare task details for the enhanced comments section
-    const taskDetails = {
-        assignee: data.assignee,
-        dueDate: data.dueDate,
-        status: data.status,
-    };
 
     return (
         <div className="flex flex-col">
@@ -41,7 +46,7 @@ export const TaskIdClient = () => {
             <EnhancedCommentsSection 
                 taskId={data.$id} 
                 workspaceId={data.workspaceId}
-                taskDetails={taskDetails}
+                taskDetails={taskDetails || undefined}
             />
         </div>
     );

@@ -1,0 +1,15 @@
+[33mcommit 60bd90a84e6eadbd1f3a04a55ad289a5aca1058a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Markk-dev <markvincent.dev@gmail.com>
+Date:   Fri Aug 22 22:37:46 2025 +0800
+
+    Refractored the comment field, added initialPinnedValues, Implemented realtime async to all comment functionalities, Fixed the nesting comment implementation
+
+src/features/comments/components/comment-item.tsx
+src/features/comments/components/enhanced-comment-form.tsx
+src/features/comments/components/enhanced-comments-section.tsx
+src/features/comments/hooks/use-realtime-comments.ts
+src/features/comments/schemas.ts
+src/features/comments/server/route.ts
+src/features/comments/types.ts
+src/hooks/use-pusher-analytics.ts
+src/lib/pusher.ts

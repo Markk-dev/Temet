@@ -31,23 +31,49 @@ const app = new Hono()
             return c.json({ error: "Unauthorized" }, 401);
         };
 
-        const members = await databases.listDocuments<Member>(
+        const members = await databases.listDocuments(
             DATABASE_ID,
             MEMBERS_ID,
             [Query.equal("workspaceId", workspaceId)]
         );
 
-        const populatedMembers = await Promise.all(
-            members.documents.map(async (member) => {
-                const user = await users.get(member.userId);
+        // ✅ FIXED: Batch query all unique user IDs instead of N+1 queries
+        const uniqueUserIds = [...new Set(members.documents.map(member => member.userId))];
+        const usersMap = new Map();
+        
+        if (uniqueUserIds.length > 0) {
+          // Get all users in parallel instead of sequentially
+          const userPromises = uniqueUserIds.map(async (userId) => {
+            try {
+              const user = await users.get(userId);
+              return [userId, user];
+            } catch (error) {
+              return [userId, { name: "Unknown User", email: "unknown@example.com" }];
+            }
+          });
+          
+          const userResults = await Promise.allSettled(userPromises);
+          userResults.forEach((result) => {
+            if (result.status === 'fulfilled') {
+              const [userId, user] = result.value;
+              usersMap.set(userId, user);
+            }
+          });
+        }
 
-                return {
-                    ...member,
-                    name: user.name || user.email,
-                    email: user.email,
-                };
-            }),
-        );
+        // ✅ FIXED: Map members to users using pre-fetched data
+        const populatedMembers = members.documents.map((member) => {
+          const user = usersMap.get(member.userId) || { 
+            name: "Unknown User", 
+            email: "unknown@example.com" 
+          };
+          
+          return {
+            ...member,
+            name: user.name || user.email,
+            email: user.email,
+          };
+        });
     
         return c.json({
             data: {

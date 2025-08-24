@@ -48,16 +48,45 @@ const app = new Hono()
             MEMBERS_ID,
             assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
         );
-        const assignees = await Promise.all(
-            members.documents.map(async (member) => {
-                const user = await users.get(member.userId);
-                return {
-                    ...member,
-                    name: user.name || user.email,
-                    email: user.email,
-                };
-            })
-        );
+        
+        
+        const uniqueUserIds = [...new Set(members.documents.map(member => member.userId))];
+        const usersMap = new Map();
+        
+        if (uniqueUserIds.length > 0) {
+          
+          const userPromises = uniqueUserIds.map(async (userId) => {
+            try {
+              const user = await users.get(userId);
+              return [userId, user];
+            } catch (error) {
+              return [userId, { name: "Unknown User", email: "unknown@example.com" }];
+            }
+          });
+          
+          const userResults = await Promise.allSettled(userPromises);
+          userResults.forEach((result) => {
+            if (result.status === 'fulfilled') {
+              const [userId, user] = result.value;
+              usersMap.set(userId, user);
+            }
+          });
+        }
+
+        
+        const assignees = members.documents.map((member) => {
+          const user = usersMap.get(member.userId) || { 
+            name: "Unknown User", 
+            email: "unknown@example.com" 
+          };
+          
+          return {
+            ...member,
+            name: user.name || user.email,
+            email: user.email,
+          };
+        });
+        
         let project = null;
         if (task.projectId) {
             try {
@@ -75,7 +104,7 @@ const app = new Hono()
             taskId,
         );
 
-        // await pusherServer.trigger("tasks", "task-deleted", { taskId, task: { ...task, assignees, project } });
+        await pusherServer.trigger("tasks", "task-deleted", { taskId, task: { ...task, assignees, project } });
 
         return c.json({data: { $id: task.$id} });
     }
@@ -124,27 +153,22 @@ const app = new Hono()
         ];
 
         if(projectId){
-            console.log("projectId: ", projectId);
             query.push(Query.equal("projectId", projectId));
         }
 
         if(status){
-            console.log("status: ", status);
             query.push(Query.equal("status", status));
         }
 
         if(assigneeId){
-            console.log("assigneeId: ", assigneeId);
             query.push(Query.contains("assigneeId", [assigneeId]));
         }
 
         if(dueDate){
-            console.log("dueDate: ", dueDate);
             query.push(Query.equal("dueDate", dueDate));
         }
 
         if(search){
-            console.log("search: ", search);
             query.push(Query.search("name", search));
         }
 
@@ -169,16 +193,43 @@ const app = new Hono()
             assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
         );
 
-        const assigneesList = await Promise.all(
-            members.documents.map(async (member) => {
-                const user = await users.get(member.userId);
-                return {
-                    ...member,
-                    name: user.name || user.email,
-                    email: user.email,
-                }
-            })
-        );
+        
+        const uniqueUserIds = [...new Set(members.documents.map(member => member.userId))];
+        const usersMap = new Map();
+        
+        if (uniqueUserIds.length > 0) {
+          
+          const userPromises = uniqueUserIds.map(async (userId) => {
+            try {
+              const user = await users.get(userId);
+              return [userId, user];
+            } catch (error) {
+              return [userId, { name: "Unknown User", email: "unknown@example.com" }];
+            }
+          });
+          
+          const userResults = await Promise.allSettled(userPromises);
+          userResults.forEach((result) => {
+            if (result.status === 'fulfilled') {
+              const [userId, user] = result.value;
+              usersMap.set(userId, user);
+            }
+          });
+        }
+
+        
+        const assigneesList = members.documents.map((member) => {
+          const user = usersMap.get(member.userId) || { 
+            name: "Unknown User", 
+            email: "unknown@example.com" 
+          };
+          
+          return {
+            ...member,
+            name: user.name || user.email,
+            email: user.email,
+          };
+        });
 
         const populatedTasks = tasks.documents.map((task) => {
             const project = projects.documents.find(
@@ -283,16 +334,45 @@ const app = new Hono()
             MEMBERS_ID,
             assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
         );
-        const assignees = await Promise.all(
-            members.documents.map(async (member) => {
-                const user = await users.get(member.userId);
-                return {
-                    ...member,
-                    name: user.name || user.email,
-                    email: user.email,
-                };
-            })
-        );
+        
+        
+        const uniqueUserIds = [...new Set(members.documents.map(member => member.userId))];
+        const usersMap = new Map();
+        
+        if (uniqueUserIds.length > 0) {
+          
+          const userPromises = uniqueUserIds.map(async (userId) => {
+            try {
+              const user = await users.get(userId);
+              return [userId, user];
+            } catch (error) {
+              return [userId, { name: "Unknown User", email: "unknown@example.com" }];
+            }
+          });
+          
+          const userResults = await Promise.allSettled(userPromises);
+          userResults.forEach((result) => {
+            if (result.status === 'fulfilled') {
+              const [userId, user] = result.value;
+              usersMap.set(userId, user);
+            }
+          });
+        }
+
+        
+        const assignees = members.documents.map((member) => {
+          const user = usersMap.get(member.userId) || { 
+            name: "Unknown User", 
+            email: "unknown@example.com" 
+          };
+          
+          return {
+            ...member,
+            name: user.name || user.email,
+            email: user.email,
+          };
+        });
+        
         let project = null;
         if (task.projectId) {
             try {
@@ -303,7 +383,7 @@ const app = new Hono()
                 );
             } catch {}
         }
-        // await pusherServer.trigger("tasks", "task-created", { task: { ...task, assignees, project } });
+        await pusherServer.trigger("tasks", "task-created", { task: { ...task, assignees, project } });
 
         return c.json({data: { ...task, assignees, project }})
     }
@@ -355,7 +435,7 @@ const app = new Hono()
         const newStatus = status;
         const currentTime = new Date().toISOString();
 
-        // Handle time logging when status changes
+        
         if (newStatus && newStatus !== oldStatus) {
             
             if (newStatus === TaskStatus.IN_PROGRESS) {
@@ -405,16 +485,45 @@ const app = new Hono()
             MEMBERS_ID,
             assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
         );
-        const assignees = await Promise.all(
-            members.documents.map(async (member) => {
-                const user = await users.get(member.userId);
-                return {
-                    ...member,
-                    name: user.name || user.email,
-                    email: user.email,
-                };
-            })
-        );
+        
+        
+        const uniqueUserIds = [...new Set(members.documents.map(member => member.userId))];
+        const usersMap = new Map();
+        
+        if (uniqueUserIds.length > 0) {
+          
+          const userPromises = uniqueUserIds.map(async (userId) => {
+            try {
+              const user = await users.get(userId);
+              return [userId, user];
+            } catch (error) {
+              return [userId, { name: "Unknown User", email: "unknown@example.com" }];
+            }
+          });
+          
+          const userResults = await Promise.allSettled(userPromises);
+          userResults.forEach((result) => {
+            if (result.status === 'fulfilled') {
+              const [userId, user] = result.value;
+              usersMap.set(userId, user);
+            }
+          });
+        }
+
+        
+        const assignees = members.documents.map((member) => {
+          const user = usersMap.get(member.userId) || { 
+            name: "Unknown User", 
+            email: "unknown@example.com" 
+          };
+          
+          return {
+            ...member,
+            name: user.name || user.email,
+            email: user.email,
+          };
+        });
+        
         let project = null;
         if (task.projectId) {
             try {
@@ -425,7 +534,7 @@ const app = new Hono()
                 );
             } catch {}
         }
-        // await pusherServer.trigger("tasks", "task-updated", { task: { ...task, assignees, project } });
+        await pusherServer.trigger("tasks", "task-updated", { task: { ...task, assignees, project } });
 
         return c.json({data: { ...task, assignees, project }})
     }
@@ -470,16 +579,43 @@ const app = new Hono()
                 [Query.contains("$id", assigneeIds)]
             );
 
-            const assignee = await Promise.all(
-                members.documents.map(async (member) => {
-                    const user = await users.get(member.userId);
-                    return {
-                        ...member,
-                        name: user.name || user.email,
-                        email: user.email,
-                    };
-                })
-            );
+            
+            const uniqueUserIds = [...new Set(members.documents.map(member => member.userId))];
+            const usersMap = new Map();
+            
+            if (uniqueUserIds.length > 0) {
+              
+              const userPromises = uniqueUserIds.map(async (userId) => {
+                try {
+                  const user = await users.get(userId);
+                  return [userId, user];
+                } catch (error) {
+                  return [userId, { name: "Unknown User", email: "unknown@example.com" }];
+                }
+              });
+              
+              const userResults = await Promise.allSettled(userPromises);
+              userResults.forEach((result) => {
+                if (result.status === 'fulfilled') {
+                  const [userId, user] = result.value;
+                  usersMap.set(userId, user);
+                }
+              });
+            }
+
+            
+            const assignee = members.documents.map((member) => {
+              const user = usersMap.get(member.userId) || { 
+                name: "Unknown User", 
+                email: "unknown@example.com" 
+              };
+              
+              return {
+                ...member,
+                name: user.name || user.email,
+                email: user.email,
+              };
+            });
 
 
             const assigneeResult = assigneeIds.length === 1 ? assignee[0] : assignee;
@@ -620,16 +756,45 @@ const app = new Hono()
             MEMBERS_ID,
             assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
         );
-        const assigneesList = await Promise.all(
-            members.documents.map(async (member) => {
-                const user = await users.get(member.userId);
-                return {
-                    ...member,
-                    name: user.name || user.email,
-                    email: user.email,
-                };
-            })
-        );
+        
+        
+        const uniqueUserIds = [...new Set(members.documents.map(member => member.userId))];
+        const usersMap = new Map();
+        
+        if (uniqueUserIds.length > 0) {
+          
+          const userPromises = uniqueUserIds.map(async (userId) => {
+            try {
+              const user = await users.get(userId);
+              return [userId, user];
+            } catch (error) {
+              return [userId, { name: "Unknown User", email: "unknown@example.com" }];
+            }
+          });
+          
+          const userResults = await Promise.allSettled(userPromises);
+          userResults.forEach((result) => {
+            if (result.status === 'fulfilled') {
+              const [userId, user] = result.value;
+              usersMap.set(userId, user);
+            }
+          });
+        }
+
+        
+        const assigneesList = members.documents.map((member) => {
+          const user = usersMap.get(member.userId) || { 
+            name: "Unknown User", 
+            email: "unknown@example.com" 
+          };
+          
+          return {
+            ...member,
+            name: user.name || user.email,
+            email: user.email,
+          };
+        });
+        
         const populatedTasks = updatedTasks.map((task) => {
             const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
             const assignees = assigneesList.filter((assignee) => assigneeIds.includes(assignee.$id));
@@ -641,7 +806,7 @@ const app = new Hono()
             };
         });
 
-        // await pusherServer.trigger("tasks", "tasks-bulk-updated", { tasks: populatedTasks });
+        await pusherServer.trigger("tasks", "tasks-bulk-updated", { tasks: populatedTasks });
 
         return c.json({ data: updatedTasks });
     }

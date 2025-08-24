@@ -1,32 +1,64 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
+import { performanceMonitor } from '@/lib/performance-monitor';
 
-export const usePerformanceMonitor = (endpoint: string) => {
-  const startTime = useRef<number>(Date.now());
+export const usePerformanceMonitor = () => {
+  const [summary, setSummary] = useState(performanceMonitor.getSummary());
+  const [isMonitoring, setIsMonitoring] = useState(false);
 
   useEffect(() => {
-    const endTime = Date.now();
-    const duration = endTime - startTime.current;
+    if (!isMonitoring) return;
+
+    const interval = setInterval(() => {
+      setSummary(performanceMonitor.getSummary());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isMonitoring]);
+
+  const startMonitoring = () => setIsMonitoring(true);
+  const stopMonitoring = () => setIsMonitoring(false);
+  const clearLogs = () => {
+    performanceMonitor.clearLogs();
+    setSummary(performanceMonitor.getSummary());
+  };
+
+  const getPerformanceInsights = () => {
+    const currentSummary = performanceMonitor.getSummary();
     
-    // Log slow requests for monitoring
-    if (duration > 1000) {
-      console.warn(`Slow API call detected: ${endpoint} took ${duration}ms`);
+    if (currentSummary.totalOperations === 0) {
+      return { status: 'info', message: 'No operations monitored yet' };
     }
-    
-    // Log all requests in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`${endpoint}: ${duration}ms`);
+
+    if (currentSummary.potentialNPlusOne > 0) {
+      return { 
+        status: 'warning', 
+        message: `${currentSummary.potentialNPlusOne} potential N+1 queries detected` 
+      };
     }
-  }, [endpoint]);
+
+    if (currentSummary.averageDuration > 200) {
+      return { 
+        status: 'warning', 
+        message: `Average operation time is ${currentSummary.averageDuration.toFixed(0)}ms (consider optimizing)` 
+      };
+    }
+
+    return { 
+      status: 'success', 
+      message: 'Performance looks good!' 
+    };
+  };
 
   return {
-    startTimer: () => {
-      startTime.current = Date.now();
-    },
-    endTimer: () => {
-      const endTime = Date.now();
-      return endTime - startTime.current;
-    }
+    summary,
+    isMonitoring,
+    startMonitoring,
+    stopMonitoring,
+    clearLogs,
+    getPerformanceInsights,
+    // Export the monitor instance for direct access
+    monitor: performanceMonitor
   };
 }; 

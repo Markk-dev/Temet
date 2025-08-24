@@ -72,7 +72,7 @@ export const DataKanban = ({
         
         // Add connection event listeners
         pusher.connection.bind('connected', () => {
-            console.log('✅ Pusher connected successfully');
+            // Connection established silently
         });
         
         pusher.connection.bind('error', (err: any) => {
@@ -82,7 +82,7 @@ export const DataKanban = ({
         const channel = pusher.subscribe('tasks');
         
         channel.bind('pusher:subscription_succeeded', () => {
-            console.log('✅ Successfully subscribed to tasks channel');
+            // Successfully subscribed silently
         });
         
         channel.bind('pusher:subscription_error', (err: any) => {

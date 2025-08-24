@@ -110,13 +110,8 @@
         dueDate?: boolean;
         status?: boolean;
         statusValue?: string;
-    }>(() => {
-        const initial: any = {};
-        initialPinnedFields.forEach(field => {
-            initial[field] = true;
-        });
-        return initial;
-    });
+        selectedAssignee?: any;
+    }>({});
     const [showMentions, setShowMentions] = useState(false);
     const [mentionQuery, setMentionQuery] = useState("");
     const [cursorPosition, setCursorPosition] = useState(0);
@@ -133,35 +128,50 @@
 
         
         
+        
+        const initialPinnedFieldsState = useMemo(() => {
+            if (mode !== "edit") return {};
+            
+            const state: any = {};
+            if (initialPinnedFields && Array.isArray(initialPinnedFields)) {
+                initialPinnedFields.forEach(field => {
+                    state[field] = true;
+                });
+            }
+            
+            if (initialPinnedFieldValues) {
+                if (initialPinnedFieldValues.status) {
+                    state.statusValue = initialPinnedFieldValues.status;
+                }
+                if (initialPinnedFieldValues.assignee) {
+                    state.selectedAssignee = initialPinnedFieldValues.assignee;
+                }
+                if (initialPinnedFieldValues.dueDate) {
+                    state.dueDateValue = initialPinnedFieldValues.dueDate;
+                }
+            }
+            
+            return state;
+        }, [mode, initialPinnedFields, initialPinnedFieldValues?.status, initialPinnedFieldValues?.assignee?.$id, initialPinnedFieldValues?.dueDate]);
+
         useEffect(() => {
-            if (mode === "edit") {
+            if (mode === "edit" && Object.keys(initialPinnedFieldsState).length > 0) {
                 setContent(initialContent || "");
                 setSelectedPriority(initialPriority as Priority | null);
-                
-                const initialPinnedFieldsState: any = {};
-                if (initialPinnedFields && Array.isArray(initialPinnedFields)) {
-                    initialPinnedFields.forEach(field => {
-                        initialPinnedFieldsState[field] = true;
-                    });
-                }
-                
-                
-                if (initialPinnedFieldValues) {
-                    if (initialPinnedFieldValues.status) {
-                        initialPinnedFieldsState.statusValue = initialPinnedFieldValues.status;
-                    }
-                    if (initialPinnedFieldValues.assignee) {
-                        initialPinnedFieldsState.assigneeValue = initialPinnedFieldValues.assignee;
-                    }
-                    if (initialPinnedFieldValues.dueDate) {
-                        initialPinnedFieldsState.dueDateValue = initialPinnedFieldValues.dueDate;
-                    }
-                }
-                
                 setPinnedFields(initialPinnedFieldsState);
                 setSelectedMentions([]);
             }
-        }, [mode, initialContent, initialPriority, initialPinnedFields, initialPinnedFieldValues]);
+        }, [mode, initialContent, initialPriority, initialPinnedFieldsState]);
+
+        
+        useEffect(() => {
+            return () => {
+                
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                }
+            };
+        }, [longPressTimer]);
 
         
         const insertMention = (userId: string, username: string) => {
@@ -229,10 +239,8 @@
             return () => document.removeEventListener('mousedown', handleClickOutside);
         }, []);
 
-        const handleSubmit = (e: React.FormEvent) => {
+        const handleSubmit = async (e: React.FormEvent) => {
             e.preventDefault();
-            
-            console.log('Form submitted:', { mode, commentId, content: content.trim() });
             
             if (!content.trim() && mode !== "edit") return;
 
@@ -243,7 +251,7 @@
                 priority: selectedPriority || undefined,
                 pinnedFields: ['assignee', 'status', 'dueDate'].filter(field => pinnedFields[field as keyof typeof pinnedFields]),
                 pinnedFieldValues: {
-                    assignee: pinnedFields.assignee ? taskDetails?.assignee : undefined,
+                    assignee: pinnedFields.assignee ? pinnedFields.selectedAssignee : undefined,
                     status: pinnedFields.status ? pinnedFields.statusValue : undefined,
                     dueDate: pinnedFields.dueDate ? taskDetails?.dueDate : undefined,
                 },
@@ -251,16 +259,6 @@
             };
 
             if (mode === "edit" && commentId) {
-                console.log('Updating comment:', commentId, 'with data:', {
-                    content: content.trim() || initialContent || "",
-                    priority: selectedPriority || undefined,
-                    pinnedFields: ['assignee', 'status', 'dueDate'].filter(field => pinnedFields[field as keyof typeof pinnedFields]),
-                    pinnedFieldValues: {
-                        assignee: pinnedFields.assignee ? taskDetails?.assignee : undefined,
-                        status: pinnedFields.status ? pinnedFields.statusValue : undefined,
-                        dueDate: pinnedFields.dueDate ? taskDetails?.dueDate : undefined,
-                    },
-                });
                 
                 if (!commentId) {
                     console.error('No commentId provided for edit mode');
@@ -268,7 +266,7 @@
                     return;
                 }
                 
-                updateComment(
+                await updateComment(
                     { 
                         commentId, 
                         data: { 
@@ -276,7 +274,7 @@
                             priority: selectedPriority || undefined,
                             pinnedFields: ['assignee', 'status', 'dueDate'].filter(field => pinnedFields[field as keyof typeof pinnedFields]),
                             pinnedFieldValues: {
-                                assignee: pinnedFields.assignee ? taskDetails?.assignee : undefined,
+                                assignee: pinnedFields.assignee ? pinnedFields.selectedAssignee : undefined,
                                 status: pinnedFields.status ? pinnedFields.statusValue : undefined,
                                 dueDate: pinnedFields.dueDate ? taskDetails?.dueDate : undefined,
                             },
@@ -303,7 +301,7 @@
                     ? { ...commentData, parentId }
                     : commentData;
 
-                createComment(finalData, {
+                await createComment(finalData, {
                     onSuccess: () => {
                         const action = mode === "reply" ? "replied to" : "added";
                         toast.success(`Comment ${action} successfully!`);
@@ -407,13 +405,13 @@
                                                         )}
                                                     </div>
                                                     <div className="flex flex-wrap gap-2 min-h-[20px]">
-                                                        {pinnedFields.assignee && taskDetails?.assignee && (
+                                                        {pinnedFields.assignee && pinnedFields.selectedAssignee && (
                                                             <Badge variant="secondary" className="text-[10px] flex items-center gap-1 bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded">
                                                                 <span className="font-medium">Assignee:</span>
-                                                                <span>{Array.isArray(taskDetails.assignee) ? taskDetails.assignee.map((a: any) => a.name).join(', ') : taskDetails.assignee.name}</span>
+                                                                <span>{pinnedFields.selectedAssignee.name || pinnedFields.selectedAssignee.email}</span>
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => setPinnedFields(prev => ({ ...prev, assignee: false }))}
+                                                                    onClick={() => setPinnedFields(prev => ({ ...prev, assignee: false, selectedAssignee: undefined }))}
                                                                     className="ml-1 hover:text-red-500 text-blue-600 hover:bg-red-50 rounded-full p-0.5"
                                                                 >
                                                                     <X className="h-3 w-3" />
@@ -579,7 +577,17 @@
                                                                                         key={assignee.$id}
                                                                                         type="button"
                                                                                         onClick={() => {
-                                                                                            setPinnedFields(prev => ({ ...prev, assignee: true }));
+                                                                                            setPinnedFields(prev => {
+                                                                                                
+                                                                                                if (prev.selectedAssignee?.$id === assignee.$id) {
+                                                                                                    return prev; 
+                                                                                                }
+                                                                                                return {
+                                                                                                    ...prev, 
+                                                                                                    assignee: true,
+                                                                                                    selectedAssignee: assignee 
+                                                                                                };
+                                                                                            });
                                                                                             setShowAssigneeDropdown(false);
                                                                                         }}
                                                                                         className="w-full flex items-center gap-2 p-2 hover:bg-gray-100 rounded text-left"
@@ -596,7 +604,17 @@
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={() => {
-                                                                                        setPinnedFields(prev => ({ ...prev, assignee: true }));
+                                                                                        setPinnedFields(prev => {
+                                                                                            
+                                                                                            if (prev.selectedAssignee?.$id === taskDetails.assignee.$id) {
+                                                                                                return prev; 
+                                                                                            }
+                                                                                            return {
+                                                                                                ...prev, 
+                                                                                                assignee: true, 
+                                                                                                selectedAssignee: taskDetails.assignee 
+                                                                                            };
+                                                                                        });
                                                                                         setShowAssigneeDropdown(false);
                                                                                     }}
                                                                                     className="w-full flex items-center gap-2 p-2 hover:bg-gray-100 rounded text-left"
@@ -622,7 +640,13 @@
                                                             type="button"
                                                             variant={pinnedFields.dueDate ? "secondary" : "outline"}
                                                             size="sm"
-                                                            onClick={() => setPinnedFields(prev => ({ ...prev, dueDate: !prev.dueDate }))}
+                                                            onClick={() => setPinnedFields(prev => {
+                                                                
+                                                                if (prev.dueDate === !prev.dueDate) {
+                                                                    return prev; 
+                                                                }
+                                                                return { ...prev, dueDate: !prev.dueDate };
+                                                            })}
                                                             className="h-8 px-2 transition-colors hover:bg-gray-50"
                                                         >
                                                             Due Date
@@ -651,7 +675,17 @@
                                                                                 key={status}
                                                                                 type="button"
                                                                                 onClick={() => {
-                                                                                    setPinnedFields(prev => ({ ...prev, status: true, statusValue: status }));
+                                                                                    setPinnedFields(prev => {
+                                                                                        
+                                                                                        if (prev.statusValue === status) {
+                                                                                            return prev; 
+                                                                                        }
+                                                                                        return {
+                                                                                            ...prev, 
+                                                                                            status: true, 
+                                                                                            statusValue: status 
+                                                                                        };
+                                                                                    });
                                                                                     setShowStatusDropdown(false);
                                                                                 }}
                                                                                 className="w-full text-left p-2 hover:bg-gray-100 rounded text-xs font-medium"

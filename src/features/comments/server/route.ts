@@ -49,42 +49,58 @@ const app = new Hono()
       );
 
       
+      const uniqueAuthorIds = [...new Set(comments.documents.map(comment => comment.authorId))];
+      
+      
       const { users } = await createAdminClient();
-      const commentsWithAuthors = await Promise.all(
-        comments.documents.map(async (comment: any) => {
+      const authorsMap = new Map();
+      
+      if (uniqueAuthorIds.length > 0) {
+        
+        const authorPromises = uniqueAuthorIds.map(async (authorId) => {
           try {
-            const author = await users.get(comment.authorId);
-            
-            // Parse pinnedFieldValues if it exists
-            let parsedPinnedFieldValues = null;
-            if (comment.pinnedFieldValues) {
-              try {
-                parsedPinnedFieldValues = JSON.parse(comment.pinnedFieldValues);
-              } catch (e) {
-                // If parsing fails, keep the original value
-                parsedPinnedFieldValues = comment.pinnedFieldValues;
-              }
-            }
-            
-            return {
-              ...comment,
-              pinnedFieldValues: parsedPinnedFieldValues,
-              author: {
-                name: author.name || author.email,
-                email: author.email,
-              },
-            };
+            const author = await users.get(authorId);
+            return [authorId, author];
           } catch (error) {
-            return {
-              ...comment,
-              author: {
-                name: "Unknown User",
-                email: "unknown@example.com",
-              },
-            };
+            return [authorId, { name: "Unknown User", email: "unknown@example.com" }];
           }
-        })
-      );
+        });
+        
+        const authorResults = await Promise.allSettled(authorPromises);
+        authorResults.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            const [authorId, author] = result.value;
+            authorsMap.set(authorId, author);
+          }
+        });
+      }
+
+      
+      const commentsWithAuthors = comments.documents.map((comment: any) => {
+        const author = authorsMap.get(comment.authorId) || { 
+          name: "Unknown User", 
+          email: "unknown@example.com" 
+        };
+        
+        
+        let parsedPinnedFieldValues = null;
+        if (comment.pinnedFieldValues) {
+          try {
+            parsedPinnedFieldValues = JSON.parse(comment.pinnedFieldValues);
+          } catch (e) {
+            parsedPinnedFieldValues = comment.pinnedFieldValues;
+          }
+        }
+        
+        return {
+          ...comment,
+          pinnedFieldValues: parsedPinnedFieldValues,
+          author: {
+            name: author.name || author.email,
+            email: author.email,
+          },
+        };
+      });
 
       
       const commentMap = new Map<string, Comment & { replies: Comment[] }>();
@@ -127,7 +143,7 @@ const app = new Hono()
         return c.json({ error: "Unauthorized" }, 401);
       }
 
-      // Use admin client to create the comment
+      
       const { databases: adminDatabases, users } = await createAdminClient();
       
       const comment = await adminDatabases.createDocument(
@@ -142,12 +158,13 @@ const app = new Hono()
           parentId: parentId || null,
           priority: priority || null,
           pinnedFields: pinnedFields || [],
-          pinnedFieldValues: pinnedFieldValues ? JSON.stringify(pinnedFieldValues) : null,
+          pinnedFieldValues: pinnedFieldValues ? 
+            JSON.stringify(pinnedFieldValues).substring(0, 1000) : null,
           mentions: mentions || [],
         }
       );
 
-      // Get author details
+      
       const author = await users.get(user.$id);
 
       const commentWithAuthor = {
@@ -159,12 +176,12 @@ const app = new Hono()
         replies: [],
       };
 
-      // Trigger real-time event for new comment (non-blocking)
+      
       pusherServer.trigger(
         getCommentsChannel(taskId),
         COMMENT_EVENTS.CREATED,
         commentWithAuthor
-      ).catch(console.error); // Handle errors silently
+      ).catch(console.error); 
 
       return c.json({ data: commentWithAuthor });
     }
@@ -178,7 +195,7 @@ const app = new Hono()
       const { commentId } = c.req.param();
       const updateData = c.req.valid("json");
 
-      // Use admin client for update operations
+      
       const { databases: adminDatabases } = await createAdminClient();
 
       const comment = await adminDatabases.getDocument(
@@ -201,16 +218,17 @@ const app = new Hono()
           content: content || comment.content,
           priority: priority || comment.priority,
           pinnedFields: pinnedFields || comment.pinnedFields,
-          pinnedFieldValues: pinnedFieldValues ? JSON.stringify(pinnedFieldValues) : comment.pinnedFieldValues,
+          pinnedFieldValues: pinnedFieldValues ? 
+            JSON.stringify(pinnedFieldValues).substring(0, 1000) : comment.pinnedFieldValues,
         },
       );
 
-      // Trigger real-time event for updated comment (non-blocking)
+      
       pusherServer.trigger(
         getCommentsChannel(comment.taskId),
         COMMENT_EVENTS.UPDATED,
         updatedComment
-      ).catch(console.error); // Handle errors silently
+      ).catch(console.error); 
 
       return c.json({ data: updatedComment });
     }
@@ -222,7 +240,7 @@ const app = new Hono()
       const user = c.get("user");
       const { commentId } = c.req.param();
 
-      // Use admin client for deletion
+      
       const { databases: adminDatabases } = await createAdminClient();
 
       const comment = await adminDatabases.getDocument(
@@ -235,26 +253,26 @@ const app = new Hono()
         return c.json({ error: "Unauthorized" }, 401);
       }
 
-      // Delete replies first
+      
       const replies = await adminDatabases.listDocuments(
         DATABASE_ID,
         "comments",
         [Query.equal("parentId", commentId)],
       );
 
-      // Collect all reply IDs that will be deleted
+      
       const deletedReplyIds: string[] = [];
       
-      // Delete all replies
+      
       for (const reply of replies.documents) {
         deletedReplyIds.push(reply.$id);
         await adminDatabases.deleteDocument(DATABASE_ID, "comments", reply.$id);
       }
 
-      // Delete the main comment
+      
       await adminDatabases.deleteDocument(DATABASE_ID, "comments", commentId);
 
-      // Trigger real-time event for deleted comment with cascade info
+      
       pusherServer.trigger(
         getCommentsChannel(comment.taskId),
         COMMENT_EVENTS.DELETED,
@@ -262,7 +280,7 @@ const app = new Hono()
           commentId,
           deletedReplyIds 
         }
-      ).catch(console.error); // Handle errors silently
+      ).catch(console.error); 
 
       return c.json({ success: true });
     }

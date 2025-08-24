@@ -1,27 +1,46 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import Pusher from 'pusher-js';
-
 
 declare global {
   interface Window {
     pusherAnalyticsInstance?: Pusher;
+    pusherAnalyticsWorkspaceId?: string;
   }
 }
 
 export const usePusherAnalytics = (workspaceId?: string) => {
   const queryClient = useQueryClient();
+  const isConnectingRef = useRef(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
     
-    
-    if (window.pusherAnalyticsInstance && 
-        window.pusherAnalyticsInstance.connection.state === 'connected') {
-      console.log('Pusher Analytics: Already connected, skipping new connection');
+    if (isConnectingRef.current) {
       return;
     }
+
     
+    if (window.pusherAnalyticsInstance && 
+        window.pusherAnalyticsWorkspaceId === workspaceId &&
+        window.pusherAnalyticsInstance.connection.state === 'connected') {
+      return;
+    }
+
+    
+    if (window.pusherAnalyticsInstance && 
+        window.pusherAnalyticsWorkspaceId !== workspaceId) {
+      try {
+        window.pusherAnalyticsInstance.disconnect();
+        window.pusherAnalyticsInstance = undefined;
+        window.pusherAnalyticsWorkspaceId = undefined;
+      } catch (error) {
+        
+      }
+    }
+
     const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
     const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
     
@@ -30,82 +49,80 @@ export const usePusherAnalytics = (workspaceId?: string) => {
       return;
     }
 
-    
-    if (window.pusherAnalyticsInstance) {
-      try {
-        window.pusherAnalyticsInstance.disconnect();
-      } catch (error) {
-        console.log('Pusher Analytics: Cleaned up existing disconnected instance');
-      }
-    }
+    isConnectingRef.current = true;
 
     const pusher = new Pusher(pusherKey, {
       cluster: pusherCluster,
       enabledTransports: ['ws', 'wss'],
     });
-    
+
     
     window.pusherAnalyticsInstance = pusher;
+    window.pusherAnalyticsWorkspaceId = workspaceId;
 
     pusher.connection.bind('connected', () => {
-      console.log('Pusher Analytics: Connected successfully');
+      
+      isConnectingRef.current = false;
     });
     
     pusher.connection.bind('error', (err: any) => {
       console.error('Pusher Analytics: Connection error:', err);
+      isConnectingRef.current = false;
     });
-    
+
+    pusher.connection.bind('disconnected', () => {
+      
+      isConnectingRef.current = false;
+    });
+
     const channel = pusher.subscribe('tasks');
     
     channel.bind('pusher:subscription_succeeded', () => {
-      console.log('Pusher Analytics: Subscribed to tasks channel');
+      
     });
     
     channel.bind('pusher:subscription_error', (err: any) => {
       console.error('Pusher Analytics: Subscription error:', err);
     });
 
-
     const invalidateAnalytics = () => {
       queryClient.invalidateQueries({ queryKey: ["workspace-analytics"] });
       queryClient.invalidateQueries({ queryKey: ["project-analytics"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       
-      
       if (workspaceId) {
         queryClient.invalidateQueries({ queryKey: ["member-time-analytics", workspaceId] });
-        console.log('Member time analytics invalidated for workspace:', workspaceId);
-      } else {
         
+      } else {
         queryClient.invalidateQueries({ queryKey: ["member-time-analytics"] });
-        console.log('All member time analytics invalidated');
+        
       }
       
-      console.log('Analytics queries invalidated');
+      
     };
 
-
     channel.bind('task-created', () => {
-      console.log('Task created - updating analytics');
+      
       invalidateAnalytics();
     });
     
     channel.bind('task-updated', () => {
-      console.log('Task updated - updating analytics (includes time tracking)');
+      
       invalidateAnalytics();
     });
     
     channel.bind('task-deleted', () => {
-      console.log('Task deleted - updating analytics');
+      
       invalidateAnalytics();
     });
     
     channel.bind('tasks-bulk-updated', () => {
-      console.log('Tasks bulk updated - updating analytics');
+      
       invalidateAnalytics();
     });
 
-    return () => {
+    
+    const cleanup = () => {
       try {
         channel.unbind_all();
         channel.unsubscribe();
@@ -114,13 +131,30 @@ export const usePusherAnalytics = (workspaceId?: string) => {
         if (window.pusherAnalyticsInstance === pusher) {
           pusher.disconnect();
           window.pusherAnalyticsInstance = undefined;
-          console.log('Pusher Analytics: Disconnected and cleaned up global instance');
+          window.pusherAnalyticsWorkspaceId = undefined;
+          
         } else {
-          console.log('Pusher Analytics: Local instance cleaned up (global instance preserved)');
+          
         }
       } catch (error) {
-        console.log('Pusher Analytics: Cleanup completed with existing connection');
+        
+      } finally {
+        isConnectingRef.current = false;
       }
     };
+
+    cleanupRef.current = cleanup;
+
+    return cleanup;
   }, [queryClient, workspaceId]);
+
+  
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+    };
+  }, []);
 };

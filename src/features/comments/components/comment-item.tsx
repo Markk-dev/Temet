@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { MessageSquare, Reply, Edit, Trash, User, Flag } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -43,7 +43,7 @@ const priorityConfig = {
     HIGHEST: { icon: IoIosTrendingUp, color: "text-red-500", bg: "bg-red-100", label: "Highest" },
 };
 
-export const CommentItem = ({ 
+const CommentItemComponent = ({ 
     comment, 
     taskId, 
     workspaceId,
@@ -59,7 +59,8 @@ export const CommentItem = ({
     const canEdit = isAuthor;
     const canDelete = isAuthor;
 
-    const handleDelete = () => {
+    // Memoize handlers to prevent unnecessary re-renders
+    const handleDelete = useCallback(() => {
         if (confirm("Are you sure you want to delete this comment?")) {
             deleteComment(comment.$id, {
                 onSuccess: () => {
@@ -70,38 +71,64 @@ export const CommentItem = ({
                 }
             });
         }
-    };
+    }, [comment.$id, deleteComment]);
 
-    const handleReply = () => {
+    const handleReply = useCallback(() => {
         onReply?.(comment.$id);
-    };
+    }, [comment.$id, onReply]);
 
-    const handleEdit = () => {
+    const handleEdit = useCallback(() => {
         onEdit?.(comment);
-    };
+    }, [comment, onEdit]);
 
-    // Function to get actual values for pinned fields
-    const getPinnedFieldValue = (field: string) => {
-        switch (field) {
-            case 'assignee':
-                if (comment.pinnedFieldValues?.assignee) {
-                    if (Array.isArray(comment.pinnedFieldValues.assignee)) {
-                        return comment.pinnedFieldValues.assignee.map((a: any) => a.name).join(', ');
+    
+    const getPinnedFieldValue = useCallback((field: string) => {
+        
+        
+        if (comment.pinnedFieldValues && typeof comment.pinnedFieldValues === 'object') {
+            const pinnedValues = comment.pinnedFieldValues as any;
+            
+            switch (field) {
+                case 'assignee':
+                    if (pinnedValues.assignee) {
+                        if (Array.isArray(pinnedValues.assignee)) {
+                            return pinnedValues.assignee.map((a: any) => a.name || a.email).join(', ');
+                        }
+                        return pinnedValues.assignee.name || pinnedValues.assignee.email || 'Unknown Assignee';
                     }
-                    return comment.pinnedFieldValues.assignee.name;
-                }
-                return taskDetails?.assignee?.name || 'Unassigned';
-            case 'status':
-                return comment.pinnedFieldValues?.status || taskDetails?.status || 'No Status';
-            case 'dueDate':
-                if (comment.pinnedFieldValues?.dueDate) {
-                    return new Date(comment.pinnedFieldValues.dueDate).toLocaleDateString();
-                }
-                return taskDetails?.dueDate ? new Date(taskDetails.dueDate).toLocaleDateString() : 'No Due Date';
-            default:
-                return field;
+                    break;
+                case 'status':
+                    if (pinnedValues.status) {
+                        return pinnedValues.status;
+                    }
+                    break;
+                case 'dueDate':
+                    if (pinnedValues.dueDate) {
+                        try {
+                            return new Date(pinnedValues.dueDate).toLocaleDateString();
+                        } catch (e) {
+                            return pinnedValues.dueDate;
+                        }
+                    }
+                    break;
+            }
         }
-    };
+        
+        
+        
+        return null;
+    }, [comment.pinnedFieldValues]);
+
+    
+    // Memoize the pinned field values to prevent unnecessary recalculations
+    const pinnedFieldValues = useMemo(() => {
+        if (!comment.pinnedFields || !comment.pinnedFields.length) return [];
+        
+        return comment.pinnedFields.map((field, index) => {
+            const fieldValue = getPinnedFieldValue(field);
+            return fieldValue ? { field, value: fieldValue, index } : null;
+        }).filter((item): item is { field: string; value: any; index: number } => item !== null);
+    }, [comment.pinnedFields, getPinnedFieldValue]);
 
     return (
         <div className={`space-y-3 ${level > 0 && level <= 2 ? 'ml-6 border-l-2 border-gray-200 pl-4' : ''}`}>
@@ -146,11 +173,11 @@ export const CommentItem = ({
                         </div>
                         
                         {/* Pinned Fields as small badges in bottom right */}
-                        {comment.pinnedFields && comment.pinnedFields.length > 0 && (
+                        {pinnedFieldValues.length > 0 && (
                             <div className="absolute bottom-2 right-2 flex flex-wrap gap-1 justify-end">
-                                {comment.pinnedFields.map((field, index) => (
+                                {pinnedFieldValues.map(({ field, value, index }) => (
                                     <Badge key={index} variant="secondary" className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
-                                        {getPinnedFieldValue(field)}
+                                        {value}
                                     </Badge>
                                 ))}
                             </div>
@@ -201,7 +228,7 @@ export const CommentItem = ({
             {comment.replies && comment.replies.length > 0 && (
                 <div className="space-y-3">
                     {comment.replies.map((reply) => (
-                        <CommentItem
+                        <CommentItemComponent
                             key={reply.$id}
                             comment={reply}
                             taskId={taskId}
@@ -216,4 +243,6 @@ export const CommentItem = ({
             )}
         </div>
     );
-}; 
+};
+
+export const CommentItem = React.memo(CommentItemComponent); 
