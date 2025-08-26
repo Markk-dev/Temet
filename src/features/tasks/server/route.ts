@@ -90,7 +90,7 @@ const app = new Hono()
         let project = null;
         if (task.projectId) {
             try {
-                project = await databases.getDocument(
+                project = await databases.getDocument<Project>(
                     DATABASE_ID,
                     PROJECTS_ID,
                     task.projectId
@@ -255,6 +255,99 @@ const app = new Hono()
         })
     }
   )
+  .get(
+    "/:taskId",
+    SessionMiddleware,
+    async (c) => {
+      const { taskId } = c.req.param();
+      const databases = c.get("databases");
+      const user = c.get("user");
+
+      const task = await databases.getDocument<Task>(
+        DATABASE_ID,
+        TASKS_ID,
+        taskId,
+      );
+
+      const member = await getMembers({
+        databases,
+        workspaceId: task.workspaceId,
+        userId: user.$id,
+      });
+
+      if (!member) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+
+      
+      let project = null;
+      if (task.projectId) {
+        try {
+          project = await databases.getDocument<Project>(
+            DATABASE_ID,
+            PROJECTS_ID,
+            task.projectId
+          );
+        } catch {}
+      }
+
+      
+      const { users } = await createAdminClient();
+      const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
+      const members = await databases.listDocuments(
+        DATABASE_ID,
+        MEMBERS_ID,
+        assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
+      );
+
+      const uniqueUserIds = [...new Set(members.documents.map(member => member.userId))];
+      const usersMap = new Map();
+      
+      if (uniqueUserIds.length > 0) {
+        const userPromises = uniqueUserIds.map(async (userId) => {
+          try {
+            const user = await users.get(userId);
+            return [userId, user];
+          } catch (error) {
+            return [userId, { name: "Unknown User", email: "unknown@example.com" }];
+          }
+        });
+        
+        const userResults = await Promise.allSettled(userPromises);
+        userResults.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            const [userId, user] = result.value;
+            usersMap.set(userId, user);
+          }
+        });
+      }
+
+      const assignees = members.documents.map((member) => {
+        const user = usersMap.get(member.userId) || { 
+          name: "Unknown User", 
+          email: "unknown@example.com" 
+        };
+        
+        return {
+          ...member,
+          name: user.name || user.email,
+          email: user.email,
+        };
+      });
+
+      
+      const assignee = assignees.length === 1 ? assignees[0] : assignees;
+      
+      return c.json({
+        data: {
+          ...task,
+          project,
+          assignee,  
+          assignees,  
+        },
+      });
+    }
+  )
   .post(
     "/",
     SessionMiddleware,
@@ -376,7 +469,7 @@ const app = new Hono()
         let project = null;
         if (task.projectId) {
             try {
-                project = await databases.getDocument(
+                project = await databases.getDocument<Project>(
                     DATABASE_ID,
                     PROJECTS_ID,
                     task.projectId
@@ -479,7 +572,9 @@ const app = new Hono()
 
         
         const { users } = await createAdminClient();
-        const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
+        
+        const finalAssigneeId = assigneeId || existingTask.assigneeId;
+        const assigneeIds = Array.isArray(finalAssigneeId) ? finalAssigneeId : [finalAssigneeId];
         const members = await databases.listDocuments(
             DATABASE_ID,
             MEMBERS_ID,
@@ -527,112 +622,25 @@ const app = new Hono()
         let project = null;
         if (task.projectId) {
             try {
-                project = await databases.getDocument(
+                project = await databases.getDocument<Project>(
                     DATABASE_ID,
                     PROJECTS_ID,
                     task.projectId
                 );
             } catch {}
         }
-        await pusherServer.trigger("tasks", "task-updated", { task: { ...task, assignees, project } });
+        
+        const updatedTaskData = {
+            ...task,
+            assigneeId: finalAssigneeId, 
+            assignees,
+            assignee: assignees.length === 1 ? assignees[0] : assignees, 
+            project
+        };
+        
+        await pusherServer.trigger("tasks", "task-updated", { task: updatedTaskData });
 
-        return c.json({data: { ...task, assignees, project }})
-    }
-  )
-  .get(
-    "/:taskId",
-    SessionMiddleware,
-    async (c) => {
-        const currentUser = c.get("user");
-        const databases = c.get("databases");
-        const { users } = await createAdminClient();
-        const { taskId } = c.req.param();
-
-        try {
-            const task = await databases.getDocument<Task>(
-                DATABASE_ID,
-                TASKS_ID,
-                taskId,
-            );
-
-            const currentMember = await getMembers({
-                databases,
-                workspaceId: task.workspaceId,
-                userId: currentUser.$id,
-            });
-
-            if(!currentMember) {
-                return c.json({error: "Unauthorized"}, 401)
-            }
-
-            const project = await databases.getDocument<Project>(
-                DATABASE_ID,
-                PROJECTS_ID,
-                task.projectId,
-            );
-
-            const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
-
-            const members = await databases.listDocuments(
-                DATABASE_ID,
-                MEMBERS_ID,
-                [Query.contains("$id", assigneeIds)]
-            );
-
-            
-            const uniqueUserIds = [...new Set(members.documents.map(member => member.userId))];
-            const usersMap = new Map();
-            
-            if (uniqueUserIds.length > 0) {
-              
-              const userPromises = uniqueUserIds.map(async (userId) => {
-                try {
-                  const user = await users.get(userId);
-                  return [userId, user];
-                } catch (error) {
-                  return [userId, { name: "Unknown User", email: "unknown@example.com" }];
-                }
-              });
-              
-              const userResults = await Promise.allSettled(userPromises);
-              userResults.forEach((result) => {
-                if (result.status === 'fulfilled') {
-                  const [userId, user] = result.value;
-                  usersMap.set(userId, user);
-                }
-              });
-            }
-
-            
-            const assignee = members.documents.map((member) => {
-              const user = usersMap.get(member.userId) || { 
-                name: "Unknown User", 
-                email: "unknown@example.com" 
-              };
-              
-              return {
-                ...member,
-                name: user.name || user.email,
-                email: user.email,
-              };
-            });
-
-
-            const assigneeResult = assigneeIds.length === 1 ? assignee[0] : assignee;
-
-            return c.json({
-                data: {
-                    ...task,
-                    project,
-                    assignee: assigneeResult,
-                }
-            })
-        } catch (err: any) {
-            if (err.code === 404) {
-                return c.json({ error: "Task not found" }, 404);
-            }
-            throw err; 
-        }
+        return c.json({data: updatedTaskData})
     }
   )
   .post(

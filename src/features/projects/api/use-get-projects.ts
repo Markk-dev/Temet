@@ -27,8 +27,8 @@ export const useGetProjects = ({
         },
         refetchOnWindowFocus: false,
         refetchOnMount: false, // Don't refetch if data exists
-        staleTime: 15 * 60 * 1000, // Cache for 15 minutes
-        gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+        staleTime: 5 * 60 * 1000, // Cache for 5 minutes (projects rarely change)
+        gcTime: 15 * 60 * 1000, // Keep in cache for 15 minutes
         retry: (failureCount, error) => {
             if (error.message.includes('4')) return false;
             return failureCount < 1; // Only retry once

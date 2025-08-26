@@ -6,9 +6,9 @@ export const usePrefetchData = () => {
   const queryClient = useQueryClient();
 
   const prefetchWorkspaceData = useCallback(async (workspaceId: string) => {
-    // Use Promise.allSettled to continue even if some requests fail
+    
     await Promise.allSettled([
-      // Workspace analytics - longer cache time since it's expensive
+      
       queryClient.prefetchQuery({
         queryKey: ["workspace-analytics", workspaceId],
         queryFn: async () => {
@@ -19,11 +19,11 @@ export const usePrefetchData = () => {
           const { data } = await response.json();
           return data;
         },
-        staleTime: 10 * 60 * 1000, // 10 minutes
-        gcTime: 30 * 60 * 1000, // 30 minutes
+        staleTime: 10 * 60 * 1000, 
+        gcTime: 30 * 60 * 1000, 
       }),
 
-      // Member time analytics - longer cache time
+      
       queryClient.prefetchQuery({
         queryKey: ["member-time-analytics", workspaceId],
         queryFn: async () => {
@@ -34,11 +34,11 @@ export const usePrefetchData = () => {
           const { data } = await response.json();
           return data;
         },
-        staleTime: 10 * 60 * 1000, // 10 minutes
-        gcTime: 30 * 60 * 1000, // 30 minutes
+        staleTime: 10 * 60 * 1000, 
+        gcTime: 30 * 60 * 1000, 
       }),
 
-      // Tasks - moderate cache time
+      
       queryClient.prefetchQuery({
         queryKey: ["tasks", workspaceId],
         queryFn: async () => {
@@ -49,11 +49,11 @@ export const usePrefetchData = () => {
           const { data } = await response.json();
           return data;
         },
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 15 * 60 * 1000, // 15 minutes
+        staleTime: 30 * 1000, 
+        gcTime: 5 * 60 * 1000, 
       }),
 
-      // Projects - longer cache time since they don't change often
+      
       queryClient.prefetchQuery({
         queryKey: ["projects", workspaceId],
         queryFn: async () => {
@@ -64,11 +64,11 @@ export const usePrefetchData = () => {
           const { data } = await response.json();
           return data;
         },
-        staleTime: 15 * 60 * 1000, // 15 minutes
-        gcTime: 30 * 60 * 1000, // 30 minutes
+        staleTime: 5 * 60 * 1000, 
+        gcTime: 15 * 60 * 1000, 
       }),
 
-      // Members - longer cache time since they don't change often
+      
       queryClient.prefetchQuery({
         queryKey: ["members", workspaceId],
         queryFn: async () => {
@@ -79,8 +79,8 @@ export const usePrefetchData = () => {
           const { data } = await response.json();
           return data;
         },
-        staleTime: 15 * 60 * 1000, // 15 minutes
-        gcTime: 30 * 60 * 1000, // 30 minutes
+        staleTime: 2 * 60 * 1000, 
+        gcTime: 10 * 60 * 1000, 
       }),
     ]);
   }, [queryClient]);
@@ -96,16 +96,16 @@ export const usePrefetchData = () => {
         const { data } = await response.json();
         return data;
       },
-      staleTime: 10 * 60 * 1000, // 10 minutes
-      gcTime: 30 * 60 * 1000, // 30 minutes
+      staleTime: 10 * 60 * 1000, 
+      gcTime: 30 * 60 * 1000, 
     });
   }, [queryClient]);
 
-  // New function to prefetch navigation data specifically
+  
   const prefetchNavigationData = useCallback(async (workspaceId: string) => {
-    // Prefetch only essential data for navigation
+    
     await Promise.allSettled([
-      // Current member data
+      
       queryClient.prefetchQuery({
         queryKey: ["current-member", workspaceId],
         queryFn: async () => {
@@ -116,11 +116,11 @@ export const usePrefetchData = () => {
           const { data } = await response.json();
           return data;
         },
-        staleTime: 15 * 60 * 1000, // 15 minutes
-        gcTime: 30 * 60 * 1000, // 30 minutes
+        staleTime: 2 * 60 * 1000, 
+        gcTime: 10 * 60 * 1000, 
       }),
 
-      // Basic workspace info
+      
       queryClient.prefetchQuery({
         queryKey: ["workspace-info", workspaceId],
         queryFn: async () => {
@@ -131,8 +131,8 @@ export const usePrefetchData = () => {
           const { data } = await response.json();
           return data;
         },
-        staleTime: 15 * 60 * 1000, // 15 minutes
-        gcTime: 30 * 60 * 1000, // 30 minutes
+        staleTime: 15 * 60 * 1000, 
+        gcTime: 30 * 60 * 1000, 
       }),
     ]);
   }, [queryClient]);

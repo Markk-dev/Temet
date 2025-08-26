@@ -22,6 +22,7 @@ import { useBulkUpdateTasks } from "../api/use-bulk-update-tasks";
 import { DataCalendar } from "./data-calendar";
 import { useProjectId } from "@/features/projects/hooks/use-project-id";
 import { TasksLoadingSkeleton } from "@/components/tasks-loading-skeleton";
+import { useRealtimeWorkspace } from "@/hooks/use-realtime-workspace";
 
 interface TaskViewSwitcherProps {
     hideProjectFilter?: boolean;
@@ -41,6 +42,9 @@ export const TaskViewSwitcher = ({hideProjectFilter} : TaskViewSwitcherProps) =>
 
     const workspaceId = useWorkspaceId();
     const paramProjectd = useProjectId();
+
+    
+    useRealtimeWorkspace(workspaceId);
 
     const { open } = useCreateTaskModal();
     const { mutate: bulkUpdate } = useBulkUpdateTasks(); 
@@ -98,7 +102,11 @@ export const TaskViewSwitcher = ({hideProjectFilter} : TaskViewSwitcherProps) =>
                         <DataTable columns={columns} data={tasks?.documents ?? []}/>
                     </TabsContent>
                     <TabsContent value="kanban" className="mt-0">
-                        <DataKanban onChange={onKanbanChange} data={tasks?. documents ?? []}/>
+                        <DataKanban 
+                            onChange={onKanbanChange} 
+                            data={tasks?.documents ?? []}
+                            workspaceId={workspaceId}
+                        />
                     </TabsContent>
                     <TabsContent value="calendar" className="mt-0 h-full pb-4">
                         <DataCalendar data={tasks?.documents ?? []}/>

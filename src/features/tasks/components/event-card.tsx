@@ -14,7 +14,7 @@ import { Member } from "@/features/members/types";
 
 interface EventCardProps {
     title: string;
-    assignee: Member;
+    assignee: Member[];
     project: Project;
     status: TaskStatus;
     id: string;
@@ -55,8 +55,8 @@ export const EventCard = ({
                 <p>{title}</p>
                 <DottedSeparator className="py-0.5 opacity-60"/>
                 <div className="flex items-center gap-x-1">
-                    {(Array.isArray(assignee) ? assignee : assignee ? [assignee] : []).length > 0
-                        ? (Array.isArray(assignee) ? assignee : [assignee]).map((member, idx) => (
+                    {assignee && assignee.length > 0
+                        ? assignee.map((member, idx) => (
                             <MemberAvatar key={member?.id || idx} name={member?.name} />
                             ))
                         : <span className="text-xs text-muted-foreground">Unassigned</span>

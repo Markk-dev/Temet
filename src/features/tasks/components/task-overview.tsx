@@ -23,7 +23,17 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 
 interface TaskOverviewProps {
     task: Task;
-    assignee: any;
+    assignee: {
+        id?: string;
+        $id?: string;
+        name?: string;
+        email?: string;
+    } | Array<{
+        id?: string;
+        $id?: string;
+        name?: string;
+        email?: string;
+    }> | undefined | null;
 };
 
 export const TaskOverview = ({
@@ -37,7 +47,7 @@ export const TaskOverview = ({
     
     const canEdit = canEditTask({
         currentUserId: currentUser?.$id,
-        assignees: assignee,
+        assignees: Array.isArray(assignee) ? assignee : assignee ? [assignee] : undefined,
         currentMemberRole: currentMember?.role,
     });
     return (
@@ -53,24 +63,31 @@ export const TaskOverview = ({
                 <DottedSeparator className="my-4"/>
                 <div className="flex flex-col gap-y-4 text-sm">
                     <OverviewProperty label="Assignee">
-                        {(Array.isArray(assignee) ? assignee : assignee ? [assignee] : []).length > 0
-                            ? (
-                                <div className="flex flex-col gap-2">
-                                {chunkArray(Array.isArray(assignee) ? assignee : [assignee], 3).map((group, rowIdx) => (
-                                  <div key={rowIdx} className="flex gap-3">
-                                    {group.map((member, idx) => (
-                                      <div key={member?.id || idx} className="flex items-center gap-x-1">
-                                        <MemberAvatar name={member?.name} className="size-5 text-xs" />
-                                        <span className="text-xs font-medium flex flex-col">{member?.name}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ))}
-                              </div>
-                              
+                        {assignee ? (
+                            Array.isArray(assignee) ? (
+                                assignee.length > 0 ? (
+                                    <div className="flex flex-col gap-2">
+                                        {chunkArray(assignee, 3).map((group, rowIdx) => (
+                                            <div key={rowIdx} className="flex gap-3">
+                                                {group.map((member, idx) => (
+                                                    <div key={member?.$id || member?.id || idx} className="flex items-center gap-x-1">
+                                                        <MemberAvatar name={member?.name || "Unknown"} className="size-5 text-xs" />
+                                                        <span className="text-xs font-medium flex flex-col">{member?.name || "Unknown"}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : <span className="text-xs text-muted-foreground">Unassigned</span>
+                            ) : (
+                                <div className="flex items-center gap-x-1">
+                                    <MemberAvatar name={assignee?.name || "Unknown"} className="size-5 text-xs" />
+                                    <span className="text-xs font-medium flex flex-col">{assignee?.name || "Unknown"}</span>
+                                </div>
                             )
-                            : <span className="text-xs text-muted-foreground">Unassigned</span>
-                        }
+                        ) : (
+                            <span className="text-xs text-muted-foreground">Unassigned</span>
+                        )}
                     </OverviewProperty>
                     <OverviewProperty label="Due Date">
                         <TaskDate value={task.dueDate} className="text-sm font-xs"/>

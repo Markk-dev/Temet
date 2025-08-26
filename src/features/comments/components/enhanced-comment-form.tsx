@@ -161,7 +161,7 @@
                 setPinnedFields(initialPinnedFieldsState);
                 setSelectedMentions([]);
             }
-        }, [mode, initialContent, initialPriority, initialPinnedFieldsState]);
+        }, [mode, initialContent, initialPriority, initialPinnedFieldsState, initialPinnedFieldValues]);
 
         
         useEffect(() => {

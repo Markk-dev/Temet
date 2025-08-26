@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useGetTask } from "@/features/tasks/api/use-get-tasks";
 import { useTaskId } from "@/features/tasks/hooks/use-task-id";
 import { TaskBreadcrumbs } from "@/features/tasks/components/task-breadcrumbs";
+import { useRealtimeTask } from "@/hooks/use-realtime-task";
 
 import { PageError } from "@/components/page-error";
 import { PageLoader } from "@/components/page-loader";
@@ -15,9 +16,10 @@ import { EnhancedCommentsSection } from "@/features/comments/components/enhanced
 export const TaskIdClient = () => {
     const  taskId = useTaskId();
     const { data, isLoading } = useGetTask({ taskId });
+    
+    // Enable real-time updates for this specific task
+    useRealtimeTask(taskId);
 
-    // Memoize task details to prevent infinite re-renders
-    // MUST be called before any conditional returns to maintain hook order
     const taskDetails = useMemo(() => {
         if (!data) return null;
         return {
@@ -25,7 +27,7 @@ export const TaskIdClient = () => {
             dueDate: data.dueDate,
             status: data.status,
         };
-    }, [data?.assignee, data?.dueDate, data?.status]);
+    }, [data]);
 
     if(isLoading){
         return <PageLoader/>

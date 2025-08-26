@@ -8,6 +8,7 @@ import { useCurrent } from "@/features/auth/api/use-current";
 import { toast } from "sonner";
 import Pusher from 'pusher-js';
 import { useQueryClient } from "@tanstack/react-query";
+import { useGlobalTaskManager } from "@/hooks/use-global-task-manager";
 
 const boards: TaskStatus[] =[
     TaskStatus.BACKLOG,
@@ -23,11 +24,13 @@ type TasksState = {
 
 interface DataKanbanProps {
     data: Task[];
+    workspaceId: string;
     onChange: (tasks: {$id: string; status: TaskStatus; position: number}[]) => void;
 };
 
 export const DataKanban = ({
     data,
+    workspaceId,
     onChange
 } : DataKanbanProps) => {
     const [task, setTasks] = useState<TasksState>(() => {
@@ -52,6 +55,7 @@ export const DataKanban = ({
 
     const { data: currentUser } = useCurrent();
     const queryClient = useQueryClient();
+    const { updateGlobalTaskState, updateSingleTask, removeGlobalTask } = useGlobalTaskManager();
 
     // Real-time Pusher integration
     useEffect(() => {
@@ -75,7 +79,7 @@ export const DataKanban = ({
             // Connection established silently
         });
         
-        pusher.connection.bind('error', (err: any) => {
+        pusher.connection.bind('error', (err: unknown) => {
             console.error('❌ Pusher connection error:', err);
         });
         
@@ -85,7 +89,7 @@ export const DataKanban = ({
             // Successfully subscribed silently
         });
         
-        channel.bind('pusher:subscription_error', (err: any) => {
+        channel.bind('pusher:subscription_error', (err: unknown) => {
             console.error('❌ Failed to subscribe to tasks channel:', err);
         });
 
@@ -136,25 +140,41 @@ export const DataKanban = ({
         };
 
         channel.bind('task-created', (data: { task: Task }) => {
-            if (data && data.task) upsertTask(data.task);
+            if (data && data.task) {
+                upsertTask(data.task);
+                // Update global state
+                updateSingleTask(workspaceId, data.task);
+            }
             queryClient.invalidateQueries({ queryKey: ["tasks"] });
             queryClient.invalidateQueries({ queryKey: ["workspace-analytics"] });
             queryClient.invalidateQueries({ queryKey: ["project-analytics"] });
         });
         channel.bind('task-updated', (data: { task: Task }) => {
-            if (data && data.task) upsertTask(data.task);
+            if (data && data.task) {
+                upsertTask(data.task);
+                // Update global state
+                updateSingleTask(workspaceId, data.task);
+            }
             queryClient.invalidateQueries({ queryKey: ["tasks"] });
             queryClient.invalidateQueries({ queryKey: ["workspace-analytics"] });
             queryClient.invalidateQueries({ queryKey: ["project-analytics"] });
         });
         channel.bind('task-deleted', (data: { taskId: string }) => {
-            if (data && data.taskId) removeTask(data.taskId);
+            if (data && data.taskId) {
+                removeTask(data.taskId);
+                // Update global state
+                removeGlobalTask(workspaceId, data.taskId);
+            }
             queryClient.invalidateQueries({ queryKey: ["tasks"] });
             queryClient.invalidateQueries({ queryKey: ["workspace-analytics"] });
             queryClient.invalidateQueries({ queryKey: ["project-analytics"] });
         });
         channel.bind('tasks-bulk-updated', (data: { tasks: Task[] }) => {
-            if (data && Array.isArray(data.tasks)) bulkUpdateTasks(data.tasks);
+            if (data && Array.isArray(data.tasks)) {
+                bulkUpdateTasks(data.tasks);
+                // Update global state
+                updateGlobalTaskState(workspaceId, data.tasks);
+            }
             queryClient.invalidateQueries({ queryKey: ["tasks"] });
             queryClient.invalidateQueries({ queryKey: ["workspace-analytics"] });
             queryClient.invalidateQueries({ queryKey: ["project-analytics"] });
@@ -165,7 +185,7 @@ export const DataKanban = ({
             channel.unsubscribe();
             pusher.disconnect();
         };
-    }, []);
+    }, [queryClient, removeGlobalTask, updateGlobalTaskState, updateSingleTask, workspaceId]);
     
     const onDragEnd = useCallback((result: DropResult) => {
         if(!result.destination) return;

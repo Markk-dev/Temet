@@ -11,8 +11,9 @@ import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 import { useCreateTaskModal } from "@/features/tasks/hooks/use-create-task-modal";
 import { useCreateProjectModal } from "@/features/projects/hooks/use-create-project-modal";
 import { useGetWorkspaceAnalytics } from "@/features/workspaces/api/use-get-workspace-analytics";
-import { usePusherAnalytics } from "@/hooks/use-pusher-analytics";
+import { useConsolidatedAnalytics } from "@/hooks/use-consolidated-analytics";
 import { usePrefetchData } from "@/hooks/use-prefetch-data";
+import { useRealtimeWorkspace } from "@/hooks/use-realtime-workspace";
 
 import { Button } from "@/components/ui/button";
 import { Analytics } from "@/components/analytics";
@@ -35,7 +36,10 @@ export const WorkspaceIdClient = () => {
     const workspaceId = useWorkspaceId();
     
     const { prefetchWorkspaceData, prefetchNavigationData } = usePrefetchData();
-    usePusherAnalytics(workspaceId); 
+    useConsolidatedAnalytics(workspaceId);
+    
+    // Enable real-time updates for the entire workspace
+    useRealtimeWorkspace(workspaceId); 
     
     React.useEffect(() => {
         if (workspaceId) {
@@ -48,7 +52,7 @@ export const WorkspaceIdClient = () => {
     }, [workspaceId, prefetchWorkspaceData, prefetchNavigationData]);
     
     
-    const { data: analytics, isLoading: isLoadingAnalytics } = useGetWorkspaceAnalytics({ 
+    const { data: analytics } = useGetWorkspaceAnalytics({ 
         workspaceId 
     });
     

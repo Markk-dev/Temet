@@ -119,7 +119,6 @@ export async function batchFetchDocuments(
       documentsMap.set(doc.$id, doc);
     });
   } catch (error) {
-    // Failed to batch fetch documents silently
     return new Map();
   }
   

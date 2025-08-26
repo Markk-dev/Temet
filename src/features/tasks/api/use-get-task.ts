@@ -52,8 +52,8 @@ export const useGetTasks = ({
         },
         refetchOnWindowFocus: false,
         refetchOnMount: false, // Don't refetch if data exists
-        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-        gcTime: 15 * 60 * 1000, // Keep in cache for 15 minutes
+        staleTime: 30 * 1000, // Cache for 30 seconds (real-time collaboration)
+        gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
         retry: (failureCount, error) => {
             // Don't retry on 4xx errors, only on network issues
             if (error.message.includes('4')) return false;

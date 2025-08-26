@@ -24,8 +24,8 @@ export const useGetMembers = ({
         },
         refetchOnWindowFocus: false,
         refetchOnMount: false, // Don't refetch if data exists
-        staleTime: 15 * 60 * 1000, // Cache for 15 minutes
-        gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+        staleTime: 2 * 60 * 1000, // Cache for 2 minutes (members can change)
+        gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
         retry: (failureCount, error) => {
             if (error.message.includes('4')) return false;
             return failureCount < 1; // Only retry once

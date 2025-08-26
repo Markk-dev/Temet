@@ -73,7 +73,7 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
       ...initialValues,
       image: initialValues.imageUrl ?? "",
     });
-  }, [initialValues]);
+  }, [initialValues, form]);
 
   const handleDelete = async () => {
     const ok = await confirmDelete();

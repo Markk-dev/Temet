@@ -20,7 +20,7 @@ export const useStorageUsage = () => {
       return response.json();
     },
     refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    staleTime: 5 * 60 * 1000, 
+    gcTime: 15 * 60 * 1000, 
   });
 }; 
