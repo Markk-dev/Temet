@@ -121,6 +121,8 @@ const app = new Hono()
             status: z.nativeEnum(TaskStatus).nullish(),
             search: z.string().nullish(),
             dueDate: z.string().nullish(),
+            page: z.string().transform(val => parseInt(val) || 1).optional(),
+            limit: z.string().transform(val => Math.min(parseInt(val) || 50, 100)).optional(),
         })
     ),
     async (c) => {
@@ -134,9 +136,12 @@ const app = new Hono()
             status,
             search,
             assigneeId,
-            dueDate
+            dueDate,
+            page = 1,
+            limit = 50
         } = c.req.valid("query");
         
+        // 1. Check authorization first
         const member = await getMembers({
             databases,
             workspaceId,
@@ -144,12 +149,15 @@ const app = new Hono()
         });
 
         if(!member) {
-            return  c.json({ error: "Unathorized"}, 401);
+            return  c.json({ error: "Unauthorized"}, 401);
         }
 
+        // 2. Build optimized query with pagination
         const query = [
             Query.equal("workspaceId", workspaceId),
-            Query.orderDesc("$createdAt")
+            Query.orderDesc("$createdAt"),
+            Query.limit(limit),
+            Query.offset((page - 1) * limit)
         ];
 
         if(projectId){
@@ -172,73 +180,110 @@ const app = new Hono()
             query.push(Query.search("name", search));
         }
 
+        // 3. Fetch tasks with optimized query
         const tasks = await databases.listDocuments<Task>(
             DATABASE_ID,
             TASKS_ID,
             query,
         );
 
-        const projectIds = tasks.documents.map((task) => task.projectId);
-        const assigneeIds = tasks.documents.flatMap((task) => task.assigneeId);
+        // 4. Early return if no tasks
+        if (tasks.documents.length === 0) {
+            return c.json({ 
+                data: {
+                    documents: [],
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0
+                }
+            });
+        }
 
-        const projects = await databases.listDocuments<Project>(
-            DATABASE_ID,
-            PROJECTS_ID,
-            projectIds.length > 0 ? [Query.contains("$id", projectIds)] : []
-        );
+        // 5. Extract unique IDs for batch fetching
+        const projectIds = [...new Set(tasks.documents.map(task => task.projectId).filter(Boolean))];
+        const assigneeIds = [...new Set(tasks.documents.flatMap(task => 
+            Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId]
+        ).filter(Boolean))];
 
-        const members = await databases.listDocuments(
-            DATABASE_ID,
-            MEMBERS_ID,
-            assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
-        );
+        // 6. Batch fetch related data in parallel
+        const [projects, members] = await Promise.all([
+            // Fetch projects if needed
+            projectIds.length > 0 
+                ? databases.listDocuments<Project>(
+                    DATABASE_ID,
+                    PROJECTS_ID,
+                    [Query.contains("$id", projectIds)]
+                )
+                : Promise.resolve({ documents: [] }),
+            
+            // Fetch members if needed
+            assigneeIds.length > 0
+                ? databases.listDocuments(
+                    DATABASE_ID,
+                    MEMBERS_ID,
+                    [Query.contains("$id", assigneeIds)]
+                )
+                : Promise.resolve({ documents: [] })
+        ]);
 
-        
+        // 7. Batch fetch users efficiently
         const uniqueUserIds = [...new Set(members.documents.map(member => member.userId))];
         const usersMap = new Map();
         
         if (uniqueUserIds.length > 0) {
-          
-          const userPromises = uniqueUserIds.map(async (userId) => {
-            try {
-              const user = await users.get(userId);
-              return [userId, user];
-            } catch (error) {
-              return [userId, { name: "Unknown User", email: "unknown@example.com" }];
-            }
-          });
-          
-          const userResults = await Promise.allSettled(userPromises);
-          userResults.forEach((result) => {
-            if (result.status === 'fulfilled') {
-              const [userId, user] = result.value;
-              usersMap.set(userId, user);
-            }
-          });
+            // Use Promise.allSettled for better error handling
+            const userPromises = uniqueUserIds.map(async (userId) => {
+                try {
+                    const user = await users.get(userId);
+                    return [userId, user];
+                } catch (error) {
+                    // Return fallback user data instead of throwing
+                    return [userId, { 
+                        name: "Unknown User", 
+                        email: "unknown@example.com" 
+                    }];
+                }
+            });
+            
+            const userResults = await Promise.allSettled(userPromises);
+            userResults.forEach((result) => {
+                if (result.status === 'fulfilled') {
+                    const [userId, user] = result.value;
+                    usersMap.set(userId, user);
+                }
+            });
         }
 
+        // 8. Create lookup maps for O(1) access
+        const projectsMap = new Map(
+            projects.documents.map(project => [project.$id, project])
+        );
         
-        const assigneesList = members.documents.map((member) => {
-          const user = usersMap.get(member.userId) || { 
-            name: "Unknown User", 
-            email: "unknown@example.com" 
-          };
-          
-          return {
-            ...member,
-            name: user.name || user.email,
-            email: user.email,
-          };
-        });
+        const membersMap = new Map(
+            members.documents.map(member => [member.$id, member])
+        );
 
+        // 9. Populate tasks efficiently with O(n) complexity
         const populatedTasks = tasks.documents.map((task) => {
-            const project = projects.documents.find(
-                (project) => project.$id === task.projectId,
-            );
+            const project = task.projectId ? projectsMap.get(task.projectId) || null : null;
             
             const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
-
-            const assignees = assigneesList.filter((assignee) => assigneeIds.includes(assignee.$id));
+            const assignees = assigneeIds
+                .filter(id => id && membersMap.has(id))
+                .map(id => {
+                    const member = membersMap.get(id);
+                    const user = usersMap.get(member?.userId) || { 
+                        name: "Unknown User", 
+                        email: "unknown@example.com" 
+                    };
+                    
+                    return {
+                        ...member,
+                        name: user.name || user.email,
+                        email: user.email,
+                    };
+                });
             
             return {
                 ...task,
@@ -247,10 +292,14 @@ const app = new Hono()
             };
         });
         
+        // 10. Return optimized response with pagination metadata
         return c.json({ 
             data: {
                 ...tasks,
                 documents: populatedTasks,
+                page,
+                limit,
+                totalPages: Math.ceil(tasks.total / limit)
             }
         })
     }

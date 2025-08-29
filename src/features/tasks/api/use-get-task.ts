@@ -9,6 +9,8 @@ interface useGetTasksProps {
     assigneeId?: string | null;
     dueDate?: string | null;
     search?: string | null;
+    page?: number;
+    limit?: number;
 };
 
 export const useGetTasks = ({
@@ -18,6 +20,8 @@ export const useGetTasks = ({
     search,
     assigneeId,
     dueDate,
+    page = 1,
+    limit = 50
 }: useGetTasksProps) => {
 
     const query = useQuery({
@@ -29,6 +33,8 @@ export const useGetTasks = ({
             search,
             assigneeId,
             dueDate,
+            page,
+            limit
         ],
         queryFn: async () => {
             const response = await client.api.tasks.$get({
@@ -39,6 +45,8 @@ export const useGetTasks = ({
                     assigneeId: assigneeId ?? undefined,
                     search: search ?? undefined,
                     dueDate: dueDate ?? undefined,
+                    page: page.toString(),
+                    limit: limit.toString(),
                 },
             });
 
@@ -60,6 +68,8 @@ export const useGetTasks = ({
             return failureCount < 1; // Only retry once
         },
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000), // Faster retry
+        // Enable pagination support
+        placeholderData: (previousData) => previousData, // Keep previous data while fetching new page
     });
 
     return query;

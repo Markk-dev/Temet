@@ -11,7 +11,8 @@
     "clean": "rm -rf .next && rm -rf node_modules/.cache",
     "deps:check": "npm outdated",
     "deps:update": "npm update",
-    "deps:audit": "npm audit fix"
+    "deps:audit": "npm audit fix",
+    "db:indexes": "tsx -r dotenv/config src/scripts/create-database-indexes.ts dotenv_config_path=.env.local"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -67,6 +68,7 @@
     "@types/react": "^18",
     "@types/react-big-calendar": "^1.8.11",
     "@types/react-dom": "^18",
+    "dotenv": "^17.2.1",
     "eslint": "^8",
     "eslint-config-next": "14.2.14",
     "postcss": "^8",
