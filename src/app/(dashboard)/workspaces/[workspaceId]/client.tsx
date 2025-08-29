@@ -121,7 +121,7 @@ export const TaskList = ({ data, total }: TasklistProps) => {
 
     return (
         <div className="flex flex-col gap-y-4 col-span-1">
-           <div className="bg-muted rounded-lg p-4">
+           <div className="bg-muted rounded-md p-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold">
                     Tasks ({total})
@@ -271,7 +271,7 @@ export const MembersList = ({ data, total }: MemberslistProps) => {
            <div className="bg-white border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <p className="text-lg font-semibold">
-                    Members ({total})
+                    Team Members
                 </p>
                 <Button asChild variant="secondary" size="icon">
                     <Link href={`/workspaces/${workspaceId}/members`}>
@@ -280,45 +280,31 @@ export const MembersList = ({ data, total }: MemberslistProps) => {
                 </Button>
               </div>
               <DottedSeparator className="my-3"/>
-              <div className={cn(
-                "pr-2",
-                data.length > 6 ? "max-h-32 overflow-y-scroll" : "overflow-hidden",
-                
-                "[&::-webkit-scrollbar]:w-2",
-                "[&::-webkit-scrollbar-track]:bg-gray-100",
-                "[&::-webkit-scrollbar-thumb]:bg-gray-300",
-                "[&::-webkit-scrollbar-thumb]:rounded-full",
-                "[&::-webkit-scrollbar-thumb:hover]:bg-gray-400",
-                
-                "scrollbar-width:thin",
-                "scrollbar-color:rgb(209 213 219) rgb(243 244 246)"
-              )}>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                 {data.map((member) => (
-                  <li key={member.$id}>
-                      <Card className="shadow-none rouded-lg overflow-hidden">
-                          <CardContent className="p-3 flex flex-col items-center gap-x-2">
-                              <MemberAvatar 
-                                  className="size-12"
-                                  name={member.name}
-                              />
-                              <div className="flex flex-col items-center overflow-hidden">
-                                  <p className="text-lg font-medium truncate line-clamp-1">
-                                      {member.name}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground truncate line-clamp-1">
-                                      {member.email}
-                                  </p>
-
-                              </div>
-                          </CardContent>
-                      </Card>
-                  </li>
-                 ))}
-                 <li className="text-sm text-muted-foreground text-center hidden first-of-type:block">
-                  No members found
-                 </li>
-                </ul>
+              <div className="space-y-3">
+                {data.map((member) => (
+                  <div key={member.$id} className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
+                      <MemberAvatar 
+                          className="size-10"
+                          name={member.name}
+                      />
+                      <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                              {member.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                              {member.email}
+                          </p>
+                      </div>
+                      <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium">
+                          Admin
+                      </span>
+                  </div>
+                ))}
+                {data.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    No members found
+                  </p>
+                )}
               </div>
            </div>
         </div>
