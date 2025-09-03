@@ -13,7 +13,7 @@ export const TemBox = () => {
     return (
         <div className="flex flex-col gap-y-2">
             <div className="flex items-center justify-between">
-                <p className="text-sm uppercase text-neutal-500"> Assets </p>
+                <p className="text-xs uppercase text-neutal-500"> Assets </p>
             </div>
             
             <div className="w-full max-w-sm flex flex-col gap-y-1">
@@ -50,7 +50,7 @@ export const TemBox = () => {
                         )}
                     >
                         <BotMessageSquare className="w-4 h-4" />
-                        AI Assistant
+                        Temet
                     </button>
                 </div>
             </div>

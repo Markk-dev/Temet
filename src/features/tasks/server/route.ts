@@ -308,10 +308,13 @@ const app = new Hono()
     "/:taskId",
     SessionMiddleware,
     async (c) => {
+      // 🚀 PERFORMANCE OPTIMIZED: Uses parallel batch queries instead of sequential
+      const startTime = Date.now();
       const { taskId } = c.req.param();
       const databases = c.get("databases");
       const user = c.get("user");
 
+      // 1. Get task and check authorization in parallel
       const task = await databases.getDocument<Task>(
         DATABASE_ID,
         TASKS_ID,
@@ -328,49 +331,75 @@ const app = new Hono()
         return c.json({ error: "Unauthorized" }, 401);
       }
 
-      
-      let project = null;
-      if (task.projectId) {
-        try {
-          project = await databases.getDocument<Project>(
-            DATABASE_ID,
-            PROJECTS_ID,
-            task.projectId
-          );
-        } catch {}
+      // 2. Early return if no assignees to avoid unnecessary queries
+      if (!task.assigneeId || (Array.isArray(task.assigneeId) && task.assigneeId.length === 0)) {
+        const executionTime = Date.now() - startTime;
+        console.log(`🚀 Individual Task Route Performance: ${executionTime}ms (early return)`);
+        
+        return c.json({
+          data: {
+            ...task,
+            project: null,
+            assignee: null,
+            assignees: [],
+          },
+        });
       }
 
-      
-      const { users } = await createAdminClient();
+      // 3. Batch all related queries in parallel for maximum performance
       const assigneeIds = Array.isArray(task.assigneeId) ? task.assigneeId : [task.assigneeId];
-      const members = await databases.listDocuments(
-        DATABASE_ID,
-        MEMBERS_ID,
-        assigneeIds.length > 0 ? [Query.contains("$id", assigneeIds)] : []
-      );
+      
+      const [project, members] = await Promise.all([
+        // Get project if exists
+        task.projectId ? 
+          databases.getDocument<Project>(DATABASE_ID, PROJECTS_ID, task.projectId).catch(() => null) : 
+          Promise.resolve(null),
+        
+        // Get members in parallel
+        assigneeIds.length > 0 ? 
+          databases.listDocuments(DATABASE_ID, MEMBERS_ID, [Query.contains("$id", assigneeIds)]) : 
+          Promise.resolve({ documents: [], total: 0 })
+      ]);
 
+      // 4. Early return if no members found
+      if (members.total === 0) {
+        const executionTime = Date.now() - startTime;
+        console.log(`🚀 Individual Task Route Performance: ${executionTime}ms (no members)`);
+        
+        return c.json({
+          data: {
+            ...task,
+            project,
+            assignee: null,
+            assignees: [],
+          },
+        });
+      }
+
+      // 5. Batch fetch all users in parallel
+      const { users } = await createAdminClient();
       const uniqueUserIds = [...new Set(members.documents.map(member => member.userId))];
+      
+      const userPromises = uniqueUserIds.map(async (userId) => {
+        try {
+          const user = await users.get(userId);
+          return [userId, user];
+        } catch (error) {
+          return [userId, { name: "Unknown User", email: "unknown@example.com" }];
+        }
+      });
+      
+      const userResults = await Promise.allSettled(userPromises);
       const usersMap = new Map();
       
-      if (uniqueUserIds.length > 0) {
-        const userPromises = uniqueUserIds.map(async (userId) => {
-          try {
-            const user = await users.get(userId);
-            return [userId, user];
-          } catch (error) {
-            return [userId, { name: "Unknown User", email: "unknown@example.com" }];
-          }
-        });
-        
-        const userResults = await Promise.allSettled(userPromises);
-        userResults.forEach((result) => {
-          if (result.status === 'fulfilled') {
-            const [userId, user] = result.value;
-            usersMap.set(userId, user);
-          }
-        });
-      }
+      userResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          const [userId, user] = result.value;
+          usersMap.set(userId, user);
+        }
+      });
 
+      // 6. Build assignees efficiently
       const assignees = members.documents.map((member) => {
         const user = usersMap.get(member.userId) || { 
           name: "Unknown User", 
@@ -384,8 +413,10 @@ const app = new Hono()
         };
       });
 
-      
+      // 7. Return optimized response with performance monitoring
       const assignee = assignees.length === 1 ? assignees[0] : assignees;
+      const executionTime = Date.now() - startTime;
+      console.log(`🚀 Individual Task Route Performance: ${executionTime}ms`);
       
       return c.json({
         data: {
