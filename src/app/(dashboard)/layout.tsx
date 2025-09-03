@@ -6,6 +6,7 @@ import { CreateTaskModal } from "@/features/tasks/components/create-task-modal";
 import { CreateProjectModal } from "@/features/projects/components/create-project-modal";
 import { CreateWorkspaceModal } from "@/features/workspaces/components/create-workspace-modal";
 import { TemBoxModal } from "@/features/tembox/components/tembox-modal";
+import { TemBoxLLM } from "@/features/tembox/components/tembox-LLM";
 import { CreateFolderModal } from "@/features/tembox/components/create-folder-modal";
 import { UpdateFolderModal } from "@/features/tembox/components/update-folder-modal";
 import { FolderViewModal } from "@/features/tembox/components/folder-view-modal";
@@ -23,6 +24,7 @@ const layout = ({children}: DashboardProps) => {
         <CreateTaskModal/>
         <EditTaskModal/>
         <TemBoxModal/>
+        <TemBoxLLM/>
         <CreateFolderModal/>
         <UpdateFolderModal/>
         <FolderViewModal/>
