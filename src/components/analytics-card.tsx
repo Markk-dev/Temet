@@ -40,7 +40,7 @@ export const AnalyticsCard = ({
                         </div>
                     </div>
                     {icon && (
-                        <div>
+                        <div className="hidden lg:block ml-4">
                             {icon}
                         </div>
                     )}

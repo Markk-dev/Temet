@@ -50,7 +50,7 @@ export const TemBox = () => {
                         )}
                     >
                         <BotMessageSquare className="w-4 h-4" />
-                        Temet
+                        Chat with Temet
                     </button>
                 </div>
             </div>

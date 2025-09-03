@@ -190,10 +190,11 @@ export function MemberTimeAnalytics() {
             </TabsList>
           </Tabs>
         </div>
+        <DottedSeparator className="pt-2" />
       </CardHeader>
-      <CardContent className="pb-2">
+      <CardContent className="pb-1">
         {hasActivity ? (
-          <div className="h-32">
+          <div className="h-48 mt-5">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={chartData}
@@ -236,7 +237,7 @@ export function MemberTimeAnalytics() {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="h-32 flex items-center justify-center text-muted-foreground text-sm">
+          <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
             No activity data for the selected time period
           </div>
         )}

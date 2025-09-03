@@ -18,6 +18,7 @@ import { useRealtimeWorkspace } from "@/hooks/use-realtime-workspace";
 import { Button } from "@/components/ui/button";
 import { Analytics } from "@/components/analytics";
 import { PageError } from "@/components/page-error";
+import { TaskStatusChart } from "@/components/task-status-chart";
 import { DashboardLoader } from "@/components/optimized-loader";
 import { DottedSeparator } from "@/components/dotted-line";
 import { Card, CardContent } from "@/components/ui/card";
@@ -95,9 +96,7 @@ export const WorkspaceIdClient = () => {
             
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 <MemberTimeAnalytics />
-                <div className="bg-muted/50 rounded-lg border-2 border-dashed border-muted-foreground/25 p-4 flex items-center justify-center">
-                    <p className="text-muted-foreground text-sm">Space for another chart</p>
-                </div>
+                <TaskStatusChart tasks={tasks.documents} />
             </div>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 <TaskList data={tasks.documents} total={tasks.total}/>
