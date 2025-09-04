@@ -5,13 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DottedSeparator } from "@/components/dotted-line";
-import { BotMessageSquare, Send, X, Bot, User } from "lucide-react";
+import { BotMessageSquare, Send, Bot, User, Menu, X } from "lucide-react";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
+import { ConversationSidebar } from "./conversation-sidebar";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface TemBoxLLMContentProps {
   onCancel?: () => void;
   conversationId?: string;
   onConversationUpdate?: (conversationId: string) => void;
+  showConversationToggle?: boolean;
+  onConversationSelect?: (conversationId: string) => void;
+  currentConversationId?: string;
+  refreshTrigger?: number;
+  onConversationDelete?: () => void;
 }
 
 interface Message {
@@ -21,11 +28,21 @@ interface Message {
     timestamp: Date;
 }
 
-export const TemBoxLLMContent = ({ onCancel, conversationId, onConversationUpdate }: TemBoxLLMContentProps) => {  
+export const TemBoxLLMContent = ({ 
+    onCancel, 
+    conversationId, 
+    onConversationUpdate,
+    showConversationToggle = false,
+    onConversationSelect,
+    currentConversationId: propCurrentConversationId,
+    refreshTrigger,
+    onConversationDelete
+}: TemBoxLLMContentProps) => {  
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [currentConversationId, setCurrentConversationId] = useState(conversationId || '');
+    const [showMobileSidebar, setShowMobileSidebar] = useState(false);
     const workspaceId = useWorkspaceId();
 
     // Load messages when conversationId changes
@@ -131,11 +148,94 @@ export const TemBoxLLMContent = ({ onCancel, conversationId, onConversationUpdat
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
+    // Animation variants (same as comment section)
+    const slideVariants = {
+        hidden: { 
+            x: "-100%"
+        },
+        visible: { 
+            x: 0
+        },
+        exit: { 
+            x: "-100%"
+        }
+    };
+
+    const backdropVariants = {
+        hidden: { opacity: 0 },
+        visible: { 
+            opacity: 1,
+            transition: { 
+                duration: 0.3,
+                delay: 0
+            }
+        },
+        exit: { 
+            opacity: 0,
+            transition: { 
+                duration: 0.2,
+                delay: 0
+            }
+        }
+    };
+
     return (
-        <Card className="w-full h-full border-none shadow-none flex flex-col">
+        <div className="relative w-full h-full">
+            {/* Mobile Sidebar Overlay with Animation */}
+            <AnimatePresence>
+                {showConversationToggle && showMobileSidebar && (
+                    <motion.div
+                        className="absolute inset-0 z-50 lg:hidden"
+                        variants={backdropVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                    >
+                        <motion.div 
+                            className="absolute inset-0 bg-black bg-opacity-50" 
+                            onClick={() => setShowMobileSidebar(false)} 
+                        />
+                        <motion.div 
+                            className="absolute left-0 top-0 bottom-0 w-80 z-10"
+                            variants={slideVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            transition={{
+                                type: "spring",
+                                damping: 30,
+                                stiffness: 300,
+                                mass: 0.8,
+                            }}
+                        >
+                            <ConversationSidebar 
+                                onConversationSelect={(id) => {
+                                    onConversationSelect?.(id);
+                                    setShowMobileSidebar(false);
+                                }}
+                                currentConversationId={propCurrentConversationId}
+                                refreshTrigger={refreshTrigger}
+                                onConversationDelete={onConversationDelete}
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            
+            <Card className="w-full h-full border-none shadow-none flex flex-col">
             <CardHeader className="p-6 pb-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
+                        {showConversationToggle && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+                                className="h-8 w-8 p-0 lg:hidden"
+                            >
+                                <Menu className="w-4 h-4" />
+                            </Button>
+                        )}
                         <div className="p-2 bg-blue-100 rounded-lg">
                             <BotMessageSquare className="w-6 h-6 text-blue-600" />
                         </div>
@@ -148,6 +248,14 @@ export const TemBoxLLMContent = ({ onCancel, conversationId, onConversationUpdat
                             </p>
                         </div>
                     </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onCancel}
+                        className="h-8 w-8 p-0"
+                    >
+                        <X className="w-4 h-4" />
+                    </Button>
                 </div>
             </CardHeader>
             
@@ -240,6 +348,7 @@ export const TemBoxLLMContent = ({ onCancel, conversationId, onConversationUpdat
                     </Button>
                 </div>
             </CardContent>
-        </Card>
+            </Card>
+        </div>
     );
 };

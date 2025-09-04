@@ -51,14 +51,14 @@ const FolderCard = ({ folder }: { folder: any }) => {
 
     return (
         <div 
-            className={`border rounded-lg p-4 ${colorClasses.bg} ${colorClasses.border} ${colorClasses.hover} cursor-pointer transition-colors`}
+            className={`border rounded-lg p-2 sm:p-4 ${colorClasses.bg} ${colorClasses.border} ${colorClasses.hover} cursor-pointer transition-colors`}
             onClick={handleFolderClick}
         >
-            <div className="flex items-center gap-3">
-                <Folder className={`size-6 ${colorClasses.icon}`}/>
-                <div>
-                    <div className="font-semibold text-gray-700">{folder.name}</div>
-                    <div className="text-sm text-gray-500">
+            <div className="flex items-center gap-2 sm:gap-3">
+                <Folder className={`size-4 sm:size-6 ${colorClasses.icon}`}/>
+                <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-gray-700 text-xs sm:text-sm truncate">{folder.name}</div>
+                    <div className="text-xs text-gray-500">
                         {filesData?.documents?.length || 0} items
                     </div>
                 </div>
@@ -226,7 +226,7 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
                     <CardTitle className="text-2xl font-bold text-gray-900">
                         Storage
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                         Manage your files and folders with drag & drop functionality
                     </p>
                 </div>
@@ -265,20 +265,20 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
                             <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="flex items-center gap-2"
+                                className="flex items-center gap-2 sm:gap-2"
                                 onClick={openCreateFolder}
                             >
                                 <FolderPlus className="size-4"/>
-                                New Folder
+                                <span className="hidden sm:inline">New Folder</span>
                             </Button>
                             <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="flex items-center gap-2"
+                                className="flex items-center gap-2 sm:gap-2"
                                 onClick={() => document.getElementById('storage-file-input')?.click()}
                             >
                                 <Upload className="size-4"/>
-                                Upload Files
+                                <span className="hidden sm:inline">Upload Files</span>
                             </Button>
                             <input
                                 id="storage-file-input"
@@ -327,7 +327,7 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
                                 {filteredFolders.length > 0 && (
                                     <div>
                                         <h4 className="text-sm font-medium text-gray-700 mb-3">Folders ({filteredFolders.length})</h4>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                                             {filteredFolders.map((folder) => (
                                                 <FolderCard key={folder.$id} folder={folder} />
                                             ))}
@@ -369,7 +369,7 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
                             </div>
                         ) : filteredFolders.length > 0 ? (
                            
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                                 {filteredFolders.map((folder) => (
                                     <FolderCard key={folder.$id} folder={folder} />
                                 ))}
@@ -388,25 +388,25 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
                     <DottedSeparator/>
 
                     {/* Storage Usage Section */}
-                    <div className="bg-blue-50 border border-dotted border-blue-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                                <h3 className="font-medium text-blue-900">Workspace Usage</h3>
+                    <div className="bg-blue-50 border border-dotted border-blue-200 rounded-lg p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="space-y-1 min-w-0 flex-1">
+                                <h3 className="font-medium text-blue-900 text-sm">Workspace Usage</h3>
                                 {isLoadingStorage ? (
                                     <div className="flex items-center gap-2">
                                         <Loader2 className="size-3 animate-spin text-blue-600" />
                                         <p className="text-xs text-blue-700">Loading storage info...</p>
                                     </div>
                                 ) : storageUsage ? (
-                                    <p className="text-xs text-blue-700">
+                                    <p className="text-xs text-blue-700 truncate">
                                         {formatFileSize(storageUsage.used)} of {formatFileSize(storageUsage.total)} used
                                     </p>
                                 ) : (
                                     <p className="text-xs text-blue-700">Unable to load storage info</p>
                                 )}
                             </div>
-                            <div className="text-right">
-                                <div className="w-40 h-2 bg-blue-200 rounded-full overflow-hidden">
+                            <div className="flex flex-col sm:items-end gap-2 min-w-0 flex-shrink-0">
+                                <div className="w-full sm:w-40 h-2 bg-blue-200 rounded-full overflow-hidden">
                                     {storageUsage && (
                                         <div 
                                             className="h-full bg-blue-500 transition-all duration-300"
@@ -415,11 +415,11 @@ export const TemBoxContent = ({ onCancel }: TemBoxContentProps) => {
                                     )}
                                 </div>
                                 {isLoadingStorage ? (
-                                    <p className="text-xs text-blue-600 mt-1">Loading...</p>
+                                    <p className="text-xs text-blue-600">Loading...</p>
                                 ) : storageUsage ? (
-                                    <p className="text-xs text-blue-600 mt-1">{storageUsage.percentage}% used</p>
+                                    <p className="text-xs text-blue-600">{storageUsage.percentage}% used</p>
                                 ) : (
-                                    <p className="text-xs text-blue-600 mt-1">--</p>
+                                    <p className="text-xs text-blue-600">--</p>
                                 )}
                             </div>
                         </div>

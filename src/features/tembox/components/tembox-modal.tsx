@@ -13,7 +13,7 @@ export const TemBoxModal = () => {
     if(isOnDesktop){
         return (
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="w-full sm:max-w-xl lg:max-w-2xl p-0 border-none overflow-y-auto hide-scrollbar max-h-[75vh]">
+                <DialogContent className="w-[95vw] max-w-2xl mx-4 p-0 border-none overflow-y-auto hide-scrollbar max-h-[75vh]">
                     <TemBoxContent onCancel={close}/>
                 </DialogContent>
             </Dialog>
