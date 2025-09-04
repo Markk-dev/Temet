@@ -11,14 +11,15 @@ import { ConversationSidebar } from "./conversation-sidebar";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface TemBoxLLMContentProps {
-  onCancel?: () => void;
-  conversationId?: string;
-  onConversationUpdate?: (conversationId: string) => void;
-  showConversationToggle?: boolean;
-  onConversationSelect?: (conversationId: string) => void;
-  currentConversationId?: string;
-  refreshTrigger?: number;
-  onConversationDelete?: () => void;
+    onCancel?: () => void;
+    conversationId?: string;
+    onConversationUpdate?: (conversationId: string) => void;
+    showConversationToggle?: boolean;
+    onConversationSelect?: (conversationId: string) => void;
+    currentConversationId?: string;
+    refreshTrigger?: number;
+    onConversationDelete?: () => void;
+    showCloseButton?: boolean;
 }
 
 interface Message {
@@ -36,7 +37,8 @@ export const TemBoxLLMContent = ({
     onConversationSelect,
     currentConversationId: propCurrentConversationId,
     refreshTrigger,
-    onConversationDelete
+    onConversationDelete,
+    showCloseButton = true
 }: TemBoxLLMContentProps) => {  
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
@@ -240,22 +242,24 @@ export const TemBoxLLMContent = ({
                             <BotMessageSquare className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                            <CardTitle className="text-xl font-bold text-gray-900">
+                            <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
                                 Chat with Temet
                             </CardTitle>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                                 Your AI assistant is ready to help
                             </p>
                         </div>
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onCancel}
-                        className="h-8 w-8 p-0"
-                    >
-                        <X className="w-4 h-4" />
-                    </Button>
+                    {showCloseButton && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={onCancel}
+                            className="h-8 w-8 p-0"
+                        >
+                            <X className="w-4 h-4" />
+                        </Button>
+                    )}
                 </div>
             </CardHeader>
             
@@ -264,8 +268,8 @@ export const TemBoxLLMContent = ({
             </div>
 
             <CardContent className="p-6 flex flex-col flex-1 min-h-0">
-                {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0">
+                                       {/* Messages Area */}
+                       <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                     {messages.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-500 text-center">
                             <BotMessageSquare className="w-12 h-12 mb-4 text-gray-400" />
@@ -273,58 +277,58 @@ export const TemBoxLLMContent = ({
                             <p className="text-sm">Try asking: "What can you help me with?"</p>
                         </div>
                     ) : (
-                        messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                            {message.sender === 'ai' && (
-                                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <Bot className="w-4 h-4 text-blue-600" />
-                                </div>
-                            )}
-                            
-                            <div
-                                className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                                    message.sender === 'user'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-900'
-                                }`}
-                            >
-                                <p className="text-sm">{message.content}</p>
-                                <p className={`text-xs mt-1 ${
-                                    message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
-                                }`}>
-                                    {formatTime(message.timestamp)}
-                                </p>
-                            </div>
+                                                       messages.map((message) => (
+                               <div
+                                   key={message.id}
+                                   className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                               >
+                                   {message.sender === 'ai' && (
+                                       <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
+                                           <Bot className="w-4 h-4 text-white" />
+                                       </div>
+                                   )}
+                                   
+                                   <div
+                                       className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${
+                                           message.sender === 'user'
+                                               ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-md'
+                                               : 'bg-white text-gray-800 border border-gray-200 rounded-bl-md'
+                                       }`}
+                                   >
+                                       <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                                       {message.sender === 'ai' && (
+                                           <p className="text-xs mt-2 text-gray-400">
+                                               {formatTime(message.timestamp)}
+                                           </p>
+                                       )}
+                                   </div>
 
-                            {message.sender === 'user' && (
-                                <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                    <User className="w-4 h-4 text-gray-600" />
-                                </div>
-                            )}
-                        </div>
-                    ))
+                                   {message.sender === 'user' && (
+                                       <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center shadow-sm">
+                                           <User className="w-4 h-4 text-gray-600" />
+                                       </div>
+                                   )}
+                               </div>
+                           ))
                     )}
                     
-                    {isLoading && (
-                        <div className="flex gap-3 justify-start">
-                            <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                <Bot className="w-4 h-4 text-blue-600" />
-                            </div>
-                            <div className="bg-gray-100 rounded-lg px-4 py-2">
-                                <div className="flex items-center gap-2">
-                                    <div className="flex space-x-1">
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                                    </div>
-                                    <span className="text-sm text-gray-500">Temet is typing...</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                                               {isLoading && (
+                               <div className="flex gap-3 justify-start">
+                                   <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
+                                       <Bot className="w-4 h-4 text-white" />
+                                   </div>
+                                   <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                                       <div className="flex items-center gap-2">
+                                           <div className="flex space-x-1">
+                                               <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                                               <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                               <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                           </div>
+                                           <span className="text-sm text-gray-600">Temet is typing...</span>
+                                       </div>
+                                   </div>
+                               </div>
+                           )}
                 </div>
 
                 {/* Input Area */}

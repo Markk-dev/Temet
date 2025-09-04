@@ -1,8 +1,9 @@
-So i want to work on my quiries to improve performance, i might have made queries to fetch
-seperately thus a build-up of fetch araises and might overload the system if persist. i want to batch
-if needed just to make compilation and fetching faster
+I want to optimize my queries to improve performance. 
+Currently, I may have written them to fetch data separately,
+which can cause a buildup of requests and potentially overload the system if it continues.
+My goal is to batch queries when necessary to make data retrieval and compilation faster.
 
-look at this when i open My project route: http://localhost:3000/workspaces/68adcf2400021b89f032/projects/68add081000c239a88bd (this is a dynamic route)
+My project route: http://localhost:3000/workspaces/68adcf2400021b89f032/projects/68add081000c239a88bd (this is a dynamic route)
 
 ○ Compiling /workspaces/[workspaceId]/projects/[projectId] ...
  ✓ Compiled /workspaces/[workspaceId]/projects/[projectId] in 4.9s (5175 modules)
@@ -35,7 +36,7 @@ Warning: This route is deprecated. See the updated documentation for improved co
 Warning: This route is deprecated. See the updated documentation for improved compatibility and migration details.
  GET /api/tasks?workspaceId=68adcf2400021b89f032&projectId=68add081000c239a88bd 200 in 1532ms
 
-look at this when i open Members route: http://localhost:3000/workspaces/68adcf2400021b89f032/members
+Members route: http://localhost:3000/workspaces/68adcf2400021b89f032/members
 
  ○ Compiling /workspaces/[workspaceId]/members ...
  ✓ Compiled /workspaces/[workspaceId]/members in 3.3s (5077 modules)
@@ -45,7 +46,7 @@ look at this when i open Members route: http://localhost:3000/workspaces/68adcf2
  GET /workspaces/68adcf2400021b89f032/members 200 in 4954ms
 
 
-and here my task navigation: 
+Task navigation: 
 
  ○ Compiling /workspaces/[workspaceId]/tasks ...
  ✓ Compiled /workspaces/[workspaceId]/tasks in 2.1s (5184 modules)

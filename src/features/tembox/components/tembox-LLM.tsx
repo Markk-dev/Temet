@@ -48,7 +48,7 @@ export const TemBoxLLM = () => {
     if(isOnDesktop){
         return (
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="w-[95vw] max-w-6xl mx-4 p-0 border-none h-[85vh] max-h-[800px] flex flex-row">
+                <DialogContent className="w-[95vw] max-w-6xl mx-4 p-0 border-none h-[85vh] max-h-[800px] flex flex-row rounded-lg">
                     <ConversationSidebar 
                         onConversationSelect={handleConversationSelect}
                         currentConversationId={currentConversationId}
@@ -60,6 +60,7 @@ export const TemBoxLLM = () => {
                             onCancel={close} 
                             conversationId={currentConversationId}
                             onConversationUpdate={handleConversationUpdate}
+                            showCloseButton={false}
                         />
                     </div>
                 </DialogContent>
@@ -79,6 +80,7 @@ export const TemBoxLLM = () => {
                     currentConversationId={currentConversationId}
                     refreshTrigger={refreshTrigger}
                     onConversationDelete={handleConversationDelete}
+                    showCloseButton={true}
                 />
             </DrawerContent>
         </Drawer>
