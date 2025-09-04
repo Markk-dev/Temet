@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,9 @@ import { BotMessageSquare, Send, X, Bot, User } from "lucide-react";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 
 interface TemBoxLLMContentProps {
-    onCancel?: () => void;
+  onCancel?: () => void;
+  conversationId?: string;
+  onConversationUpdate?: (conversationId: string) => void;
 }
 
 interface Message {
@@ -19,11 +21,41 @@ interface Message {
     timestamp: Date;
 }
 
-export const TemBoxLLMContent = ({ onCancel }: TemBoxLLMContentProps) => {  
+export const TemBoxLLMContent = ({ onCancel, conversationId, onConversationUpdate }: TemBoxLLMContentProps) => {  
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [currentConversationId, setCurrentConversationId] = useState(conversationId || '');
     const workspaceId = useWorkspaceId();
+
+    // Load messages when conversationId changes
+    useEffect(() => {
+        if (conversationId) {
+            loadConversation(conversationId);
+        } else {
+            setMessages([]);
+            setCurrentConversationId('');
+        }
+    }, [conversationId]);
+
+    const loadConversation = async (convId: string) => {
+        try {
+            const response = await fetch(`/api/conversations/${convId}/messages`);
+            if (response.ok) {
+                const data = await response.json();
+                const loadedMessages = data.messages.map((msg: any) => ({
+                    id: msg.id,
+                    content: msg.content,
+                    sender: msg.sender,
+                    timestamp: new Date(msg.timestamp)
+                }));
+                setMessages(loadedMessages);
+                setCurrentConversationId(convId);
+            }
+        } catch (error) {
+            console.error('Error loading conversation:', error);
+        }
+    };
 
     const handleSendMessage = async () => {
         if (!inputMessage.trim() || isLoading) return;
@@ -49,7 +81,7 @@ export const TemBoxLLMContent = ({ onCancel }: TemBoxLLMContentProps) => {
                 body: JSON.stringify({
                     message: userMessage.content,
                     userId: 'current-user-id', // TODO: Get actual user ID
-                    conversationId: 'current-conversation-id', // TODO: Get actual conversation ID
+                    conversationId: currentConversationId || undefined,
                     workspaceId: workspaceId // Pass workspace context
                 }),
             });
@@ -59,6 +91,12 @@ export const TemBoxLLMContent = ({ onCancel }: TemBoxLLMContentProps) => {
             }
 
             const data = await response.json();
+            
+            // Update conversation ID if we got a new one
+            if (data.conversationId && data.conversationId !== currentConversationId) {
+                setCurrentConversationId(data.conversationId);
+                onConversationUpdate?.(data.conversationId);
+            }
             
             const aiMessage: Message = {
                 id: (Date.now() + 1).toString(),

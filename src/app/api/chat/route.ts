@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/appwrite';
+import { ID, Query } from 'node-appwrite';
 
 export async function POST(request: NextRequest) {
   try {
@@ -146,12 +148,79 @@ IMPORTANT: You have READ-ONLY access to workspace data. You can view and analyze
       );
     }
 
-    // TODO: Store conversation in database
-    // You can add database storage here later
+    // Store conversation in database
+    let currentConversationId = conversationId;
+    try {
+      const { databases } = await createAdminClient();
+      const databaseId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'temet';
+      const conversationsId = process.env.NEXT_PUBLIC_APPWRITE_CONVERSATIONS_ID || 'conversations';
+      const messagesId = process.env.NEXT_PUBLIC_APPWRITE_MESSAGES_ID || 'messages';
+
+      // Create new conversation if none exists
+      if (!currentConversationId) {
+        const conversationTitle = message.length > 30 ? message.substring(0, 30) + '...' : message;
+        
+        const newConversation = await databases.createDocument(
+          databaseId,
+          conversationsId,
+          ID.unique(),
+          {
+            userId: userId || 'anonymous',
+            sessionId: `session_${Date.now()}`,
+            title: conversationTitle,
+            lastMessageAt: new Date().toISOString(),
+            workspaceId: workspaceId || null
+          }
+        );
+        currentConversationId = newConversation.$id;
+      }
+
+      // Save user message
+      await databases.createDocument(
+        databaseId,
+        messagesId,
+        ID.unique(),
+        {
+          conversationId: currentConversationId,
+          sender: 'user',
+          content: message,
+          timestamp: new Date().toISOString(),
+          messageType: 'text'
+        }
+      );
+
+      // Save AI response
+      await databases.createDocument(
+        databaseId,
+        messagesId,
+        ID.unique(),
+        {
+          conversationId: currentConversationId,
+          sender: 'ai',
+          content: aiResponse,
+          timestamp: new Date().toISOString(),
+          messageType: 'text'
+        }
+      );
+
+      // Update conversation last message time
+      await databases.updateDocument(
+        databaseId,
+        conversationsId,
+        currentConversationId,
+        {
+          lastMessageAt: new Date().toISOString()
+        }
+      );
+
+    } catch (dbError) {
+      console.error('Database storage error:', dbError);
+      // Continue even if database storage fails
+    }
 
     return NextResponse.json({
       response: aiResponse,
-      conversationId: conversationId || `conv_${Date.now()}`,
+      conversationId: currentConversationId,
     });
 
   } catch (error) {
