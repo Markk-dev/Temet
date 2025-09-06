@@ -126,6 +126,8 @@ const app = new Hono()
         })
     ),
     async (c) => {
+        // 🚀 PERFORMANCE MONITORING: Track tasks route execution time
+        const startTime = Date.now();
         const { users } = await createAdminClient();
         const databases = c.get("databases");
         const user = c.get("user");
@@ -292,7 +294,10 @@ const app = new Hono()
             };
         });
         
-        // 10. Return optimized response with pagination metadata
+        // 10. Performance monitoring and return optimized response
+        const executionTime = Date.now() - startTime;
+        console.log(`🚀 Tasks Route Performance: ${executionTime}ms`);
+        
         return c.json({ 
             data: {
                 ...tasks,

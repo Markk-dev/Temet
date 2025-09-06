@@ -24,41 +24,42 @@ export async function getMemberTimeAnalytics({
   workspaceId,
 }: MemberTimeAnalyticsParams): Promise<{ members: MemberAnalytics[] }> {
   try {
+    // 🚀 PERFORMANCE OPTIMIZED: Parallel queries and batch user fetching
+    const startTime = Date.now();
     const { databases } = await createSessionClient();
     const { users } = await createAdminClient();
 
-    
-    const membersResult = await databases.listDocuments(
-      DATABASE_ID,
-      MEMBERS_ID,
-      [Query.equal("workspaceId", workspaceId)]
-    );
+    // 🚀 OPTIMIZATION: Fetch members and tasks in parallel
+    const [membersResult, tasksResult] = await Promise.all([
+      databases.listDocuments(
+        DATABASE_ID,
+        MEMBERS_ID,
+        [Query.equal("workspaceId", workspaceId)]
+      ),
+      databases.listDocuments(
+        DATABASE_ID,
+        TASKS_ID,
+        [
+          Query.equal("workspaceId", workspaceId),
+          Query.limit(1000) // Increase limit for better performance
+        ]
+      )
+    ]);
 
-    
-    const tasksResult = await databases.listDocuments(
-      DATABASE_ID,
-      TASKS_ID,
-      [
-        Query.equal("workspaceId", workspaceId)
-      ]
-    );
-
-    
     const memberAnalytics: Record<string, MemberAnalytics> = {};
     
-    
-    // ✅ FIXED: Batch query all unique user IDs instead of N+1 queries
+    // 🚀 OPTIMIZATION: Batch fetch all users in one go (prevents N+1 queries)
     const uniqueUserIds = [...new Set(membersResult.documents.map(member => member.userId))];
     const usersMap = new Map();
     
     if (uniqueUserIds.length > 0) {
-      // Get all users in parallel instead of sequentially
+      // Batch fetch all users in parallel with better error handling
       const userPromises = uniqueUserIds.map(async (userId) => {
         try {
           const user = await users.get(userId);
           return [userId, user];
         } catch (error) {
-          return [userId, { name: "Unknown Member", email: "" }];
+          return [userId, { name: "Unknown Member", email: "", $id: userId }];
         }
       });
       
@@ -157,6 +158,10 @@ export async function getMemberTimeAnalytics({
       
       member.dailyTime.sort((a, b) => a.date.localeCompare(b.date));
     });
+
+    // Performance monitoring
+    const executionTime = Date.now() - startTime;
+    console.log(`🚀 Member Time Analytics Performance: ${executionTime}ms`);
 
     return {
       members: Object.values(memberAnalytics)

@@ -16,6 +16,8 @@ const app = new Hono()
     SessionMiddleware,
     zValidator("query", z.object({ workspaceId: z.string() })),
     async (c) => {
+        // 🚀 PERFORMANCE MONITORING: Track members route execution time
+        const startTime = Date.now();
         const { users } = await createAdminClient();
         const databases = c.get("databases");
         const user = c.get("user");
@@ -75,6 +77,10 @@ const app = new Hono()
           };
         });
     
+        // Performance monitoring
+        const executionTime = Date.now() - startTime;
+        console.log(`🚀 Members Route Performance: ${executionTime}ms`);
+
         return c.json({
             data: {
                 ...members,
@@ -87,6 +93,8 @@ const app = new Hono()
     "/current-member/:workspaceId",
     SessionMiddleware,
     async (c) => {
+        // 🚀 PERFORMANCE MONITORING: Track current member route execution time
+        const startTime = Date.now();
         const { workspaceId } = c.req.param();
         const user = c.get("user");
         const databases = c.get("databases");
@@ -100,6 +108,10 @@ const app = new Hono()
         if (!member) {
             return c.json({ error: "Member not found" }, 404);
         }
+
+        // Performance monitoring
+        const executionTime = Date.now() - startTime;
+        console.log(`🚀 Current Member Route Performance: ${executionTime}ms`);
 
         return c.json({ data: member });
     }
