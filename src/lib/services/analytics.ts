@@ -93,7 +93,10 @@ export async function getMemberTimeAnalytics({
       let timeLogs: TimeLog[] = [];
       try {
         timeLogs = task.timeLogs ? JSON.parse(task.timeLogs as string) : [];
-      } catch {
+        console.log(`📊 Task ${task.$id}: Found ${timeLogs.length} time logs`);
+      } catch (error) {
+        console.error(`❌ Failed to parse time logs for task ${task.$id}:`, error);
+        console.log(`Raw timeLogs data:`, task.timeLogs);
         return; 
       }
 
@@ -105,12 +108,17 @@ export async function getMemberTimeAnalytics({
       const taskDailyTime: Record<string, number> = {}; 
 
       timeLogs.forEach((log: TimeLog) => {
-        if (!log.started_at) return; 
+        if (!log.started_at) {
+          console.log(`⚠️ Time log missing started_at:`, log);
+          return; 
+        }
 
         
         const endTime = log.ended_at || new Date().toISOString();
         const duration = (new Date(endTime).getTime() - new Date(log.started_at).getTime()) / 1000;
         const date = log.started_at.split('T')[0]; 
+        
+        console.log(`📅 Time log: ${date} - ${duration} seconds (${duration/60} minutes)`);
         
         taskTotalTime += duration;
         taskDailyTime[date] = (taskDailyTime[date] || 0) + duration;
@@ -120,9 +128,12 @@ export async function getMemberTimeAnalytics({
       const timePerMember = taskTotalTime / assigneeIds.length;
       
       assigneeIds.forEach(assigneeId => {
-        if (!memberAnalytics[assigneeId]) return; 
+        if (!memberAnalytics[assigneeId]) {
+          console.log(`⚠️ Member ${assigneeId} not found in analytics`);
+          return; 
+        }
         
-        
+        console.log(`👤 Adding ${timePerMember} seconds to member ${assigneeId}`);
         memberAnalytics[assigneeId].totalTimeSpent += timePerMember;
         
         
@@ -162,6 +173,12 @@ export async function getMemberTimeAnalytics({
     // Performance monitoring
     const executionTime = Date.now() - startTime;
     console.log(`🚀 Member Time Analytics Performance: ${executionTime}ms`);
+    
+    // Debug final results
+    console.log(`📊 Final Analytics Results:`);
+    Object.values(memberAnalytics).forEach(member => {
+      console.log(`👤 ${member.name}: ${member.totalTimeSpent} seconds total, ${member.dailyTime.length} daily entries`);
+    });
 
     return {
       members: Object.values(memberAnalytics)

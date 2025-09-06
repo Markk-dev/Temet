@@ -5,7 +5,7 @@ import { zValidator } from "@hono/zod-validator";
 
 import { getMembers } from "@/features/members/utils";
 import { createCommentSchema, updateCommentSchema } from "../schemas";
-import { DATABASE_ID } from "@/config";
+import { DATABASE_ID, TASKS_ID, COMMENTS_ID } from "@/config";
 import { createAdminClient } from "@/lib/appwrite";
 import { SessionMiddleware } from "@/lib/session-middleware";
 import { pusherServer, getCommentsChannel, COMMENT_EVENTS } from "@/lib/pusher";
@@ -22,7 +22,7 @@ const app = new Hono()
 
       const task = await databases.getDocument(
         DATABASE_ID,
-        "68667b13001e69e4bf4f", 
+        "6875b24d002cfb61b81b", 
         taskId,
       );
 
@@ -40,7 +40,7 @@ const app = new Hono()
       
       const comments = await adminDatabases.listDocuments(
         DATABASE_ID,
-        "comments",
+        COMMENTS_ID,
         [
           Query.equal("taskId", taskId),
           Query.equal("workspaceId", task.workspaceId),
@@ -148,7 +148,7 @@ const app = new Hono()
       
       const comment = await adminDatabases.createDocument(
         DATABASE_ID,
-        "comments",
+        COMMENTS_ID,
         ID.unique(),
         {
           taskId,
@@ -156,11 +156,12 @@ const app = new Hono()
           content,
           authorId: user.$id,
           parentId: parentId || null,
-          priority: priority || null,
-          pinnedFields: pinnedFields || [],
-          pinnedFieldValues: pinnedFieldValues ? 
-            JSON.stringify(pinnedFieldValues).substring(0, 1000) : null,
-          mentions: mentions || [],
+          // Temporarily commented out until attributes are added to database
+          // priority: priority || null,
+          // pinnedFields: pinnedFields || [],
+          // pinnedFieldValues: pinnedFieldValues ? 
+          //   JSON.stringify(pinnedFieldValues).substring(0, 1000) : null,
+          // mentions: mentions || [],
         }
       );
 
@@ -200,7 +201,7 @@ const app = new Hono()
 
       const comment = await adminDatabases.getDocument(
         DATABASE_ID,
-        "comments",
+        COMMENTS_ID,
         commentId,
       );
 
@@ -212,14 +213,15 @@ const app = new Hono()
 
       const updatedComment = await adminDatabases.updateDocument(
         DATABASE_ID,
-        "comments",
+        COMMENTS_ID,
         commentId,
         {
           content: content || comment.content,
-          priority: priority || comment.priority,
-          pinnedFields: pinnedFields || comment.pinnedFields,
-          pinnedFieldValues: pinnedFieldValues ? 
-            JSON.stringify(pinnedFieldValues).substring(0, 1000) : comment.pinnedFieldValues,
+          // Temporarily commented out until attributes are added to database
+          // priority: priority || comment.priority,
+          // pinnedFields: pinnedFields || comment.pinnedFields,
+          // pinnedFieldValues: pinnedFieldValues ? 
+          //   JSON.stringify(pinnedFieldValues).substring(0, 1000) : comment.pinnedFieldValues,
         },
       );
 
@@ -245,7 +247,7 @@ const app = new Hono()
 
       const comment = await adminDatabases.getDocument(
         DATABASE_ID,
-        "comments",
+        COMMENTS_ID,
         commentId,
       );
 
@@ -256,7 +258,7 @@ const app = new Hono()
       
       const replies = await adminDatabases.listDocuments(
         DATABASE_ID,
-        "comments",
+        COMMENTS_ID,
         [Query.equal("parentId", commentId)],
       );
 
@@ -266,11 +268,11 @@ const app = new Hono()
       
       for (const reply of replies.documents) {
         deletedReplyIds.push(reply.$id);
-        await adminDatabases.deleteDocument(DATABASE_ID, "comments", reply.$id);
+        await adminDatabases.deleteDocument(DATABASE_ID, COMMENTS_ID, reply.$id);
       }
 
       
-      await adminDatabases.deleteDocument(DATABASE_ID, "comments", commentId);
+      await adminDatabases.deleteDocument(DATABASE_ID, COMMENTS_ID, commentId);
 
       
       pusherServer.trigger(

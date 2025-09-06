@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/appwrite";
-import { DATABASE_ID } from "@/config";
+import { DATABASE_ID, FILES_ID, IMAGES_BUCKET_ID } from "@/config";
 
 export async function GET(
   request: NextRequest,
@@ -14,13 +14,13 @@ export async function GET(
     // Get the file record to find the storage file ID
     const fileRecord = await databases.getDocument(
       DATABASE_ID,
-      "files",
+      FILES_ID,
       fileId
     );
 
     // Get the actual file content from storage
     const fileBuffer = await storage.getFileView(
-      '684af449000b14ce963b', // bucket ID
+      IMAGES_BUCKET_ID,
       fileRecord.fileId
     );
 

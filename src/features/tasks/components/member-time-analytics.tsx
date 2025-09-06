@@ -112,17 +112,16 @@ export function MemberTimeAnalytics() {
     const periods = {
       week: { 
         count: 7, 
-        subtract: (date: Date, i: number) => {
-          const today = new Date();
-          const currentDay = today.getDay(); 
-          const startOfWeek = new Date(today);
-          startOfWeek.setDate(today.getDate() - currentDay); 
-          return new Date(startOfWeek.getTime() + i * 24 * 60 * 60 * 1000); 
-        }, 
+        subtract: (date: Date, i: number) => subDays(date, 6 - i), 
         format: 'eee' 
       },
       month: { count: 30, subtract: (date: Date, i: number) => subDays(date, 29 - i), format: 'MMM d' },
-      year: { count: 12, subtract: (date: Date, i: number) => subMonths(date, 11 - i), format: 'MMM yyyy' }
+      year: { count: 5, subtract: (date: Date, i: number) => {
+        const year = new Date();
+        year.setFullYear(year.getFullYear() - (4 - i));
+        year.setMonth(0, 1); // Set to January 1st
+        return year;
+      }, format: 'yyyy' }
     };
     return periods[timePeriod];
   };
@@ -133,13 +132,46 @@ export function MemberTimeAnalytics() {
     return format(date, 'yyyy-MM-dd');
   });
 
+  // Debug logging
+  console.log(`📅 ${timePeriod.toUpperCase()} time range:`, timeRange);
+
   
   const sortedMembers = [...data.members]
     .map((member) => {
+      let totalTime = 0;
       
-      const totalTime = member.dailyTime
-        .filter(day => timeRange.includes(day.date))
-        .reduce((sum, day) => sum + day.seconds, 0);
+      if (timePeriod === 'year') {
+        // For year view, aggregate daily data into yearly buckets
+        const yearlyData: Record<string, number> = {};
+        
+        member.dailyTime.forEach(day => {
+          const yearKey = day.date.substring(0, 4); // Get YYYY
+          yearlyData[yearKey] = (yearlyData[yearKey] || 0) + day.seconds;
+        });
+        
+        // Check if any of the yearly buckets match our time range
+        timeRange.forEach(timePoint => {
+          const yearKey = timePoint.substring(0, 4);
+          if (yearlyData[yearKey]) {
+            totalTime += yearlyData[yearKey];
+          }
+        });
+        
+        console.log(`👤 ${member.name} (YEAR): ${Object.keys(yearlyData).length} years with data, total: ${totalTime} seconds`);
+        if (Object.keys(yearlyData).length > 0) {
+          console.log(`   Years:`, Object.entries(yearlyData).map(([year, seconds]) => `${year}: ${seconds}s`));
+        }
+      } else {
+        // For week and month, use daily filtering
+        const filteredDays = member.dailyTime.filter(day => timeRange.includes(day.date));
+        totalTime = filteredDays.reduce((sum, day) => sum + day.seconds, 0);
+        
+        console.log(`👤 ${member.name} (${timePeriod.toUpperCase()}): ${filteredDays.length} days in range, total: ${totalTime} seconds`);
+        if (filteredDays.length > 0) {
+          console.log(`   Days:`, filteredDays.map(d => `${d.date}: ${d.seconds}s`));
+        }
+      }
+      
       return { ...member, totalTime };
     })
     .filter((member) => member.totalTime > 0) 
@@ -154,8 +186,18 @@ export function MemberTimeAnalytics() {
     const dayData: TimeDataPoint = { date: timePoint };
     
     sortedMembers.forEach((member: MemberAnalytics) => {
-      const memberDay = member.dailyTime.find((d: { date: string; seconds: number }) => d.date === timePoint);
-      dayData[member.id] = memberDay ? memberDay.seconds : 0;
+      if (timePeriod === 'year') {
+        // For year view, aggregate all days in the year
+        const yearKey = timePoint.substring(0, 4); // Get YYYY
+        const yearlyTime = member.dailyTime
+          .filter(day => day.date.startsWith(yearKey))
+          .reduce((sum, day) => sum + day.seconds, 0);
+        dayData[member.id] = yearlyTime;
+      } else {
+        // For week and month, use exact date matching
+        const memberDay = member.dailyTime.find((d: { date: string; seconds: number }) => d.date === timePoint);
+        dayData[member.id] = memberDay ? memberDay.seconds : 0;
+      }
     });
     
     chartData.push(dayData);
@@ -169,7 +211,7 @@ export function MemberTimeAnalytics() {
     const descriptions = {
       week: "Time spent on tasks in the last 7 days", 
       month: "Time spent on tasks in the last 30 days",
-      year: "Time spent on tasks in the last 12 months"
+      year: "Time spent on tasks in the last 5 years"
     };
     return descriptions[timePeriod];
   };

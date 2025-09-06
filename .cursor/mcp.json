@@ -12,9 +12,9 @@
           "--messaging"
         ],
         "env": {
-          "APPWRITE_API_KEY": "standard_086a43c80ad14d8c85510fa88f14e87a13e3ce21ba08f3b585a28aafe1e38be27be710427de378d0f8756cbec436ed1f09844002f5827057c4de8a771a7db73d3878a61ae25d815dedf0fd5b0735e6293e150a6d0a133fe45399de5c6f1ad186352f7ade23c611c89187ad31f2c832704379b85e4eac1797c318ff1bc4a98177",
-          "APPWRITE_PROJECT_ID": "6845ab7e000a73c36110",
-          "APPWRITE_ENDPOINT": "https://fra.cloud.appwrite.io/v1"
+          "APPWRITE_API_KEY": "standard_cc27689a81a3db0329b3deaba7149fd1bf945586ed75d183da242e2198ebe37318655204c5503c2ae32c19d4024ba47cd7acdec34a0445e8357da8373a2437c998c28432592ef5c7f63ec684f2e044f291bfe6a1f015d8595f0fb37a7d7d7d849b9aab7df77dbc6b143af69bbd8efe187390f6679999b2b44cfe5b8f8481b965",
+          "APPWRITE_PROJECT_ID": "6875b3740011fa1a653e",
+          "APPWRITE_ENDPOINT": "https://syd.cloud.appwrite.io/v1"
         }
       }
     }

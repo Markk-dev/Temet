@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/appwrite";
-import { DATABASE_ID } from "@/config";
+import { DATABASE_ID, IMAGES_BUCKET_ID } from "@/config";
 import { ID, Query } from "node-appwrite";
 
 export async function POST(request: NextRequest) {
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Upload file to storage
     const uploadedFile = await storage.createFile(
-      '684af449000b14ce963b', // bucket ID
+      IMAGES_BUCKET_ID,
       ID.unique(),
       file
     );

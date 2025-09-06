@@ -74,13 +74,21 @@ const app = new Hono()
     
       };
 
-      const workspace = await databases.getDocument<Workspace>(
-        DATABASE_ID,
-        WORKSPACES_ID,
-        workspaceId,
-      );
+      try {
+        const workspace = await databases.getDocument<Workspace>(
+          DATABASE_ID,
+          WORKSPACES_ID,
+          workspaceId,
+        );
 
-      return c.json({ data: workspace });
+        return c.json({ data: workspace });
+      } catch (error: any) {
+        if (error.code === 404) {
+          return c.json({ error: "Workspace not found" }, 404);
+        }
+        console.error("Error fetching workspace:", error);
+        return c.json({ error: "Failed to fetch workspace" }, 500);
+      }
     }
   )
   .get(
@@ -90,17 +98,25 @@ const app = new Hono()
       const databases = c.get("databases");
       const { workspaceId } = c.req.param();
       
-      const workspace = await databases.getDocument<Workspace>(
-        DATABASE_ID,
-        WORKSPACES_ID,
-        workspaceId,
-      );
+      try {
+        const workspace = await databases.getDocument<Workspace>(
+          DATABASE_ID,
+          WORKSPACES_ID,
+          workspaceId,
+        );
 
-      return c.json({ 
-        data: {
-          $id: workspace.$id, 
-          name: workspace.name, 
-          imageUrl: workspace.imageUrl} });
+        return c.json({ 
+          data: {
+            $id: workspace.$id, 
+            name: workspace.name, 
+            imageUrl: workspace.imageUrl} });
+      } catch (error: any) {
+        if (error.code === 404) {
+          return c.json({ error: "Workspace not found" }, 404);
+        }
+        console.error("Error fetching workspace info:", error);
+        return c.json({ error: "Failed to fetch workspace info" }, 500);
+      }
     }
   )
   .post(
@@ -108,56 +124,66 @@ const app = new Hono()
     zValidator("form", createWorkspacesSchema),
     SessionMiddleware,
     async (c) => {
-      const databases = c.get("databases");
-      const storage = c.get("storage");
-      const user = c.get("user");
+      try {
+        const databases = c.get("databases");
+        const storage = c.get("storage");
+        const user = c.get("user");
 
-      const { name, image } = c.req.valid("form");
+        const { name, image } = c.req.valid("form");
 
-      let uploadedImageUrl: string | undefined;
+        let uploadedImageUrl: string | undefined;
 
-      if (image instanceof File) {
-        const file = await storage.createFile(
-          IMAGES_BUCKET_ID,
-          ID.unique(),
-          image,
-        );
+        if (image instanceof File) {
+          try {
+            const file = await storage.createFile(
+              IMAGES_BUCKET_ID,
+              ID.unique(),
+              image,
+            );
 
-        if (!PROJECT_ENDPOINT || !APPWRITE_PROJECT) {
-          console.error("Missing APPWRITE_ENDPOINT or APPWRITE_PROJECT_ID in env");
-          return c.text("Server misconfiguration", 500);
+            if (!PROJECT_ENDPOINT || !APPWRITE_PROJECT) {
+              console.error("Missing APPWRITE_ENDPOINT or APPWRITE_PROJECT_ID in env");
+              return c.text("Server misconfiguration", 500);
+            }
+
+            uploadedImageUrl = getFileViewUrl(file.$id);
+          } catch (error) {
+            console.error("Failed to upload image:", error);
+            return c.json({ error: "Failed to upload image" }, 500);
+          }
         }
 
-        //Will fix later but for now HARDCODED KA MUNA
-        uploadedImageUrl = getFileViewUrl(file.$id);
-      }
+        const workspace = await databases.createDocument(
+          DATABASE_ID,
+          WORKSPACES_ID,
+          ID.unique(),
+          {
+            name,
+            userId: user.$id,
+            imageUrl: uploadedImageUrl,
+            inviteCode: generateInviteCode(6),
+          }
+        );
 
-    const workspace = await databases.createDocument(
-      DATABASE_ID,
-      WORKSPACES_ID,
-      ID.unique(),
-      {
-        name,
-        userId: user.$id,
-        imageUrl: uploadedImageUrl,
-        inviteCode: generateInviteCode(6),
+        await databases.createDocument(
+          DATABASE_ID,
+          MEMBERS_ID,
+          ID.unique(),
+          {
+            userId: user.$id,
+            workspaceId: workspace.$id,
+            role: MemberRole.ADMIN,
+          }
+        );
+        
+        // await pusherServer.trigger("workspaces", "workspace-created", { workspace });
+        return c.json({ data: workspace });
+      } catch (error) {
+        console.error("Workspace creation failed:", error);
+        return c.json({ error: "Failed to create workspace" }, 500);
       }
-    );
-
-    await databases.createDocument(
-      DATABASE_ID,
-      MEMBERS_ID,
-      ID.unique(),
-      {
-        userId: user.$id,
-        workspaceId: workspace.$id,
-        role: MemberRole.ADMIN,
-      }
-    );
-    // await pusherServer.trigger("workspaces", "workspace-created", { workspace });
-    return c.json({ data: workspace });
-  }
-)
+    }
+  )
   .patch(
     "/:workspaceId",
     SessionMiddleware,

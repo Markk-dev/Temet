@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
       [Query.equal("workspaceId", workspaceId)]
     );
 
+
     // Fetch members in this workspace
     const membersResponse = await databases.listDocuments(
       databaseId,
@@ -104,7 +105,7 @@ export async function GET(request: NextRequest) {
       })),
       tasks: tasksResponse.documents.map(task => ({
         id: task.$id,
-        title: task.title,
+        title: task.name || task.title || task.taskName || 'Untitled Task',
         description: task.description,
         status: task.status,
         priority: task.priority,

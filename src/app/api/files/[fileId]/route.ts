@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/appwrite";
-import { DATABASE_ID } from "@/config";
+import { DATABASE_ID, FILES_ID, IMAGES_BUCKET_ID } from "@/config";
 
 export async function DELETE(
   request: NextRequest,
@@ -14,20 +14,20 @@ export async function DELETE(
     // First, get the file record to find the storage file ID
     const fileRecord = await databases.getDocument(
       DATABASE_ID,
-      "files",
+      FILES_ID,
       fileId
     );
 
     // Delete the file from storage
     await storage.deleteFile(
-      '684af449000b14ce963b', // bucket ID
+      IMAGES_BUCKET_ID,
       fileRecord.fileId
     );
 
     // Delete the file record from database
     await databases.deleteDocument(
       DATABASE_ID,
-      "files",
+      FILES_ID,
       fileId
     );
 

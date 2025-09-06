@@ -1,7 +1,7 @@
 "use client"
 
 import { z } from "zod";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,9 +28,31 @@ interface CreateWorkspaceFormProp{
 export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProp) => {
     const router = useRouter();
 
-    const { mutate, isPending } = useCreateWorkspace(); 
+    const { mutate, isPending, error } = useCreateWorkspace(); 
 
     const inputRef = useRef<HTMLInputElement>(null);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Add timeout to prevent getting stuck
+    useEffect(() => {
+        if (isPending) {
+            timeoutRef.current = setTimeout(() => {
+                console.error("Workspace creation timed out");
+                // You could add a toast notification here
+            }, 30000); // 30 second timeout
+        } else {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+        }
+
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, [isPending]);
 
     const form = useForm<z.infer<typeof createWorkspacesSchema>>({
         resolver: zodResolver(createWorkspacesSchema),
@@ -50,7 +72,12 @@ export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProp) => {
           {
             onSuccess: ({data}) => {
               form.reset();
-              router.push(`/workspaces/${data.$id}`);
+              // Use replace instead of push to prevent back button issues
+              router.replace(`/workspaces/${data.$id}`);
+            },
+            onError: (error) => {
+              console.error("Workspace creation failed:", error);
+              // Don't reset form on error so user can try again
             },
           }
         );
@@ -165,6 +192,16 @@ export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProp) => {
                             />
                          </div>
                          <DottedSeparator className="py-7"/>
+                         
+                         {/* Error Display */}
+                         {error && (
+                             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                                 <p className="text-sm text-red-600">
+                                     Failed to create workspace. Please try again.
+                                 </p>
+                             </div>
+                         )}
+                         
                          <div className="flex items-center justify-between">
                             <Button 
                                 type="button"
@@ -177,7 +214,7 @@ export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProp) => {
                                 Cancel
                             </Button>
                             <Button type="submit" size="lg" variant="primary" disabled={isPending}>
-                                Create Workspace
+                                {isPending ? "Creating..." : "Create Workspace"}
                             </Button>
                          </div>
                     </form>

@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DottedSeparator } from "@/components/dotted-line";
 import { BotMessageSquare, Send, Bot, User, Menu, X } from "lucide-react";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
+import { useCurrent } from "@/features/auth/api/use-current";
 import { ConversationSidebar } from "./conversation-sidebar";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -46,6 +47,23 @@ export const TemBoxLLMContent = ({
     const [currentConversationId, setCurrentConversationId] = useState(conversationId || '');
     const [showMobileSidebar, setShowMobileSidebar] = useState(false);
     const workspaceId = useWorkspaceId();
+    const { data: user } = useCurrent();
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to bottom function
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    // Auto-scroll when messages change
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    // Auto-scroll when component mounts or conversation changes
+    useEffect(() => {
+        scrollToBottom();
+    }, [conversationId]);
 
     // Load messages when conversationId changes
     useEffect(() => {
@@ -89,6 +107,9 @@ export const TemBoxLLMContent = ({
         setMessages(prev => [...prev, userMessage]);
         setInputMessage('');
         setIsLoading(true);
+        
+        // Scroll to bottom after user message
+        setTimeout(scrollToBottom, 100);
 
         // Call our secure API endpoint
         try {
@@ -99,7 +120,8 @@ export const TemBoxLLMContent = ({
                 },
                 body: JSON.stringify({
                     message: userMessage.content,
-                    userId: 'current-user-id', // TODO: Get actual user ID
+                    userId: user?.$id || 'anonymous',
+                    userName: user?.name || 'User',
                     conversationId: currentConversationId || undefined,
                     workspaceId: workspaceId // Pass workspace context
                 }),
@@ -125,11 +147,14 @@ export const TemBoxLLMContent = ({
             };
             
             setMessages(prev => [...prev, aiMessage]);
+            
+            // Scroll to bottom after AI response
+            setTimeout(scrollToBottom, 100);
         } catch (error) {
             console.error('Error calling AI API:', error);
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                content: 'Sorry, I encountered an error. Please try again.',
+                content: 'I\'m currently experiencing high demand and all AI models are temporarily unavailable. This usually happens when there\'s a lot of traffic. Please try again in a few minutes!',
                 sender: 'ai',
                 timestamp: new Date()
             };
@@ -329,6 +354,9 @@ export const TemBoxLLMContent = ({
                                    </div>
                                </div>
                            )}
+                    
+                    {/* Scroll target for auto-scroll */}
+                    <div ref={messagesEndRef} />
                 </div>
 
                 {/* Input Area */}

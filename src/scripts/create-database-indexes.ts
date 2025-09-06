@@ -13,10 +13,36 @@ const TASKS_ID = process.env.NEXT_PUBLIC_APPWRITE_TASKS_ID!;
 const PROJECTS_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECTS_ID!;
 const MEMBERS_ID = process.env.NEXT_PUBLIC_APPWRITE_MEMBERS_ID!;
 const WORKSPACES_ID = process.env.NEXT_PUBLIC_APPWRITE_WORKSPACES_ID!;
+const COMMENTS_ID = process.env.NEXT_PUBLIC_APPWRITE_COMMENTS_ID!;
+const FILES_ID = process.env.NEXT_PUBLIC_APPWRITE_FILES_ID!;
+const FOLDERS_ID = process.env.NEXT_PUBLIC_APPWRITE_FOLDERS_ID!;
 
 async function createDatabaseIndexes() {
     try {
         console.log('🚀 Creating database indexes for better performance...');
+        
+        // Check if all required environment variables are set
+        const requiredVars = {
+            DATABASE_ID,
+            TASKS_ID,
+            PROJECTS_ID,
+            MEMBERS_ID,
+            WORKSPACES_ID,
+            COMMENTS_ID,
+            FILES_ID,
+            FOLDERS_ID
+        };
+        
+        const missingVars = Object.entries(requiredVars)
+            .filter(([key, value]) => !value)
+            .map(([key]) => key);
+            
+        if (missingVars.length > 0) {
+            console.error('❌ Missing required environment variables:');
+            missingVars.forEach(varName => console.error(`   • ${varName}`));
+            console.error('\nPlease check your .env.local file and ensure all collection IDs are set.');
+            process.exit(1);
+        }
 
         // 1. Tasks Collection Indexes
         console.log('📋 Creating Tasks collection indexes...');
@@ -196,6 +222,105 @@ async function createDatabaseIndexes() {
             ['DESC']
         );
         console.log('✅ Created index: createdAt (workspaces)');
+
+        // 5. Comments Collection Indexes (if collection exists)
+        if (COMMENTS_ID) {
+            console.log('💬 Creating Comments collection indexes...');
+            
+            try {
+                await databases.createIndex(
+                    DATABASE_ID,
+                    COMMENTS_ID,
+                    ID.unique(),
+                    IndexType.Key,
+                    ['taskId'],
+                    ['ASC']
+                );
+                console.log('✅ Created index: taskId (comments)');
+
+                await databases.createIndex(
+                    DATABASE_ID,
+                    COMMENTS_ID,
+                    ID.unique(),
+                    IndexType.Key,
+                    ['workspaceId'],
+                    ['ASC']
+                );
+                console.log('✅ Created index: workspaceId (comments)');
+
+                await databases.createIndex(
+                    DATABASE_ID,
+                    COMMENTS_ID,
+                    ID.unique(),
+                    IndexType.Key,
+                    ['authorId'],
+                    ['ASC']
+                );
+                console.log('✅ Created index: authorId (comments)');
+            } catch (error: any) {
+                if (error.code === 404) {
+                    console.log('⚠️  Comments collection not found, skipping...');
+                } else {
+                    throw error;
+                }
+            }
+        }
+
+        // 6. Files Collection Indexes (if collection exists)
+        if (FILES_ID) {
+            console.log('📁 Creating Files collection indexes...');
+            
+            try {
+                await databases.createIndex(
+                    DATABASE_ID,
+                    FILES_ID,
+                    ID.unique(),
+                    IndexType.Key,
+                    ['workspaceId'],
+                    ['ASC']
+                );
+                console.log('✅ Created index: workspaceId (files)');
+
+                await databases.createIndex(
+                    DATABASE_ID,
+                    FILES_ID,
+                    ID.unique(),
+                    IndexType.Key,
+                    ['folderId'],
+                    ['ASC']
+                );
+                console.log('✅ Created index: folderId (files)');
+            } catch (error: any) {
+                if (error.code === 404) {
+                    console.log('⚠️  Files collection not found, skipping...');
+                } else {
+                    throw error;
+                }
+            }
+        }
+
+        // 7. Folders Collection Indexes (if collection exists)
+        if (FOLDERS_ID) {
+            console.log('📂 Creating Folders collection indexes...');
+            
+            try {
+                await databases.createIndex(
+                    DATABASE_ID,
+                    FOLDERS_ID,
+                    ID.unique(),
+                    IndexType.Key,
+                    ['workspaceId'],
+                    ['ASC']
+                );
+                console.log('✅ Created index: workspaceId (folders)');
+            } catch (error: any) {
+                if (error.code === 404) {
+                    console.log('⚠️  Folders collection not found, skipping...');
+                } else {
+                    throw error;
+                }
+            }
+        }
 
         console.log('\n🎉 All database indexes created successfully!');
         console.log('\n📊 Performance improvements expected:');

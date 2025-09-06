@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageSquare, Plus, Trash2, X } from "lucide-react";
 import { useTemboxLLMModal } from "../hooks/use-tembox-llm-modal";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
+import { useCurrent } from "@/features/auth/api/use-current";
 
 interface Conversation {
   id: string;
@@ -33,11 +34,12 @@ export const ConversationSidebar = ({
   const [isLoading, setIsLoading] = useState(true);
   const { open } = useTemboxLLMModal();
   const workspaceId = useWorkspaceId();
+  const { data: user } = useCurrent();
 
   const fetchConversations = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/conversations?userId=current-user-id&workspaceId=${workspaceId}`);
+      const response = await fetch(`/api/conversations?userId=${user?.$id || 'anonymous'}&workspaceId=${workspaceId}`);
       if (response.ok) {
         const data = await response.json();
         setConversations(data.conversations || []);
@@ -50,15 +52,17 @@ export const ConversationSidebar = ({
   };
 
   useEffect(() => {
-    fetchConversations();
-  }, [workspaceId, refreshTrigger]);
+    if (user?.$id) {
+      fetchConversations();
+    }
+  }, [workspaceId, refreshTrigger, user?.$id]);
 
   // Also fetch conversations when the modal opens
   useEffect(() => {
-    if (workspaceId) {
+    if (workspaceId && user?.$id) {
       fetchConversations();
     }
-  }, [workspaceId]);
+  }, [workspaceId, user?.$id]);
 
   const handleNewChat = () => {
     onConversationSelect(''); // Empty string means new conversation
@@ -144,7 +148,7 @@ export const ConversationSidebar = ({
                   className={`group relative rounded-lg ${
                     currentConversationId === conversation.id 
                       ? 'bg-blue-100' 
-                      : 'hover:bg-gray-100'
+                      : 'bg-gray-50 hover:bg-gray-100'
                   }`}
                 >
                   <Button
