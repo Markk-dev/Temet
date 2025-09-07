@@ -23,7 +23,7 @@ export const TemBox = () => {
                     <button 
                         onClick={open}  
                         className={cn(
-                            "text-sm flex-1 rounded-none border-0 h-10 gap-2 font-medium bg-gradient-to-b from-blue-600 to-blue-700 text-primary-foreground hover:from-blue-700 hover:to-blue-700 transition-all flex items-center justify-center",
+                            "text-sm w-full rounded-lg border-0 h-10 gap-2 font-medium bg-gradient-to-b from-blue-600 to-blue-700 text-primary-foreground hover:from-blue-700 hover:to-blue-700 transition-all flex items-center justify-center",
                             pathname.includes('/tembox') && "from-blue-700 to-blue-800"
                         )}
                     >
@@ -31,7 +31,8 @@ export const TemBox = () => {
                         Storage
                     </button>
 
-                    <div className="w-px bg-border" />
+                    {/* Temporarily commented out Canvas button - feature preserved */}
+                    {/* <div className="w-px bg-border" />
                     
                     <div 
                         className={cn(
@@ -41,7 +42,7 @@ export const TemBox = () => {
                     >
                         <Palette className="w-4 h-4" />
                         Canvas
-                    </div>
+                    </div> */}
                 </div>
                 <div className="flex items-center justify-between">
                     <button 

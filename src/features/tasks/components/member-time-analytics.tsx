@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, subDays, subMonths } from "date-fns";
+import { format, subDays } from "date-fns";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 import { getMemberTimeAnalytics, MemberAnalytics } from "@/lib/api/analytics";
 import { Loader2 } from "lucide-react";
@@ -41,9 +41,23 @@ const CustomTooltip = ({ active, payload, label, timePeriod, members, memberColo
     return format(date, 'MMM d'); 
   };
 
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 min-w-[200px]">
+  
+  const activeEntries = payload.filter(entry => entry.value > 0);
+  const longestName = activeEntries.reduce((longest, entry) => {
+    const member = members.find(m => m.id === entry.dataKey);
+    return member && member.name.length > longest ? member.name.length : longest;
+  }, 0);
 
+  
+  const baseWidth = 120; 
+  const charWidth = 8; 
+  const dynamicWidth = Math.min(Math.max(baseWidth + (longestName * charWidth), 200), 350);
+
+  return (
+    <div 
+      className="bg-white border border-gray-200 rounded-lg shadow-lg p-4"
+      style={{ minWidth: `${dynamicWidth}px`, maxWidth: '350px' }}
+    >
       <div className="flex justify-end mb-2">
         <span className="text-sm font-medium text-gray-700">
           {formatDate(label)}
@@ -53,29 +67,35 @@ const CustomTooltip = ({ active, payload, label, timePeriod, members, memberColo
       <DottedSeparator className="mb-3" />
       
       <div className="space-y-2">
-        {payload
-          .filter(entry => entry.value > 0) 
-          .map((entry, index) => {
-            const member = members.find(m => m.id === entry.dataKey);
-            if (!member) return null;
-            
-            const hours = Math.floor(entry.value / 3600);
-            const minutes = Math.round((entry.value % 3600) / 60);
-            const timeDisplay = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-            
-            return (
-              <div key={entry.dataKey} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-sm"
-                    style={{ backgroundColor: memberColorMap.get(entry.dataKey) }}
-                  />
-                  <span className="text-sm text-gray-700">{member.name}</span>
-                </div>
-                <span className="text-sm font-medium text-gray-900">{timeDisplay}</span>
+        {activeEntries.map((entry, index) => {
+          const member = members.find(m => m.id === entry.dataKey);
+          if (!member) return null;
+          
+          const hours = Math.floor(entry.value / 3600);
+          const minutes = Math.round((entry.value % 3600) / 60);
+          const timeDisplay = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+          
+          
+          const nameLengthRatio = member.name.length / longestName;
+          const dynamicGap = Math.max(1, Math.min(3, 1 + (nameLengthRatio * 2))); 
+          
+          return (
+            <div 
+              key={entry.dataKey} 
+              className="flex items-center justify-between"
+              style={{ gap: `${dynamicGap * 0.25}rem` }}
+            >
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div 
+                  className="w-3 h-3 rounded-sm flex-shrink-0"
+                  style={{ backgroundColor: memberColorMap.get(entry.dataKey) }}
+                />
+                <span className="text-sm text-gray-700">{member.name}</span>
               </div>
-            );
-          })}
+              <span className="text-sm font-medium text-gray-900 flex-shrink-0">{timeDisplay}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -119,7 +139,7 @@ export function MemberTimeAnalytics() {
       year: { count: 5, subtract: (date: Date, i: number) => {
         const year = new Date();
         year.setFullYear(year.getFullYear() - (4 - i));
-        year.setMonth(0, 1); // Set to January 1st
+        year.setMonth(0, 1); 
         return year;
       }, format: 'yyyy' }
     };
@@ -132,7 +152,7 @@ export function MemberTimeAnalytics() {
     return format(date, 'yyyy-MM-dd');
   });
 
-  // Debug logging
+  
   console.log(`📅 ${timePeriod.toUpperCase()} time range:`, timeRange);
 
   
@@ -141,15 +161,15 @@ export function MemberTimeAnalytics() {
       let totalTime = 0;
       
       if (timePeriod === 'year') {
-        // For year view, aggregate daily data into yearly buckets
+        
         const yearlyData: Record<string, number> = {};
         
         member.dailyTime.forEach(day => {
-          const yearKey = day.date.substring(0, 4); // Get YYYY
+          const yearKey = day.date.substring(0, 4); 
           yearlyData[yearKey] = (yearlyData[yearKey] || 0) + day.seconds;
         });
         
-        // Check if any of the yearly buckets match our time range
+        
         timeRange.forEach(timePoint => {
           const yearKey = timePoint.substring(0, 4);
           if (yearlyData[yearKey]) {
@@ -162,7 +182,7 @@ export function MemberTimeAnalytics() {
           console.log(`   Years:`, Object.entries(yearlyData).map(([year, seconds]) => `${year}: ${seconds}s`));
         }
       } else {
-        // For week and month, use daily filtering
+        
         const filteredDays = member.dailyTime.filter(day => timeRange.includes(day.date));
         totalTime = filteredDays.reduce((sum, day) => sum + day.seconds, 0);
         
@@ -187,14 +207,14 @@ export function MemberTimeAnalytics() {
     
     sortedMembers.forEach((member: MemberAnalytics) => {
       if (timePeriod === 'year') {
-        // For year view, aggregate all days in the year
-        const yearKey = timePoint.substring(0, 4); // Get YYYY
+        
+        const yearKey = timePoint.substring(0, 4); 
         const yearlyTime = member.dailyTime
           .filter(day => day.date.startsWith(yearKey))
           .reduce((sum, day) => sum + day.seconds, 0);
         dayData[member.id] = yearlyTime;
       } else {
-        // For week and month, use exact date matching
+        
         const memberDay = member.dailyTime.find((d: { date: string; seconds: number }) => d.date === timePoint);
         dayData[member.id] = memberDay ? memberDay.seconds : 0;
       }

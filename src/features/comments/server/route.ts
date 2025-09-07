@@ -156,12 +156,11 @@ const app = new Hono()
           content,
           authorId: user.$id,
           parentId: parentId || null,
-          // Temporarily commented out until attributes are added to database
-          // priority: priority || null,
-          // pinnedFields: pinnedFields || [],
-          // pinnedFieldValues: pinnedFieldValues ? 
-          //   JSON.stringify(pinnedFieldValues).substring(0, 1000) : null,
-          // mentions: mentions || [],
+          priority: priority || null,
+          pinnedFields: pinnedFields || [],
+          pinnedFieldValues: pinnedFieldValues ? 
+            JSON.stringify(pinnedFieldValues).substring(0, 1000) : null,
+          mentions: mentions || [],
         }
       );
 
@@ -217,11 +216,10 @@ const app = new Hono()
         commentId,
         {
           content: content || comment.content,
-          // Temporarily commented out until attributes are added to database
-          // priority: priority || comment.priority,
-          // pinnedFields: pinnedFields || comment.pinnedFields,
-          // pinnedFieldValues: pinnedFieldValues ? 
-          //   JSON.stringify(pinnedFieldValues).substring(0, 1000) : comment.pinnedFieldValues,
+          priority: priority || comment.priority,
+          pinnedFields: pinnedFields || comment.pinnedFields,
+          pinnedFieldValues: pinnedFieldValues ? 
+            JSON.stringify(pinnedFieldValues).substring(0, 1000) : comment.pinnedFieldValues,
         },
       );
 

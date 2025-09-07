@@ -8,6 +8,7 @@ import { MessageSquare, Plus, Trash2, X } from "lucide-react";
 import { useTemboxLLMModal } from "../hooks/use-tembox-llm-modal";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 import { useCurrent } from "@/features/auth/api/use-current";
+import { UseConfirm } from "@/hooks/use-confirm";
 
 interface Conversation {
   id: string;
@@ -35,6 +36,12 @@ export const ConversationSidebar = ({
   const { open } = useTemboxLLMModal();
   const workspaceId = useWorkspaceId();
   const { data: user } = useCurrent();
+
+  const [ConfirmDialog, confirm] = UseConfirm(
+    "Delete Conversation",
+    "Are you sure you want to delete this conversation? This action cannot be undone.",
+    "deletion"
+  );
 
   const fetchConversations = async () => {
     try {
@@ -77,7 +84,8 @@ export const ConversationSidebar = ({
   const handleDeleteConversation = async (conversationId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering conversation selection
     
-    if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+    const ok = await confirm();
+    if (!ok) {
       return;
     }
 
@@ -110,80 +118,85 @@ export const ConversationSidebar = ({
 
 
   return (
-    <Card className="w-80 h-full border-r rounded-none">
-      <CardContent className="p-4 h-full flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Conversations</h3>
-          <Button
-            onClick={handleNewChat}
-            size="sm"
-            className="h-8 w-8 p-0"
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-        </div>
+    <>
+      <Card className="w-80 h-full border-r rounded-none">
+        <CardContent className="p-4 h-full flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Conversations</h3>
+            <Button
+              onClick={handleNewChat}
+              size="sm"
+              className="h-8 w-8 p-0"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
 
-        {/* Conversations List */}
-        <ScrollArea className="flex-1">
-          {isLoading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-12 bg-gray-200 rounded-lg mb-2"></div>
-                </div>
-              ))}
-            </div>
-          ) : conversations.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
-              <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-              <p className="text-sm">No conversations yet</p>
-              <p className="text-xs text-gray-400">Start a new chat to begin</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {conversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className={`group relative rounded-lg ${
-                    currentConversationId === conversation.id 
-                      ? 'bg-blue-100' 
-                      : 'bg-gray-50 hover:bg-gray-100'
-                  }`}
-                >
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start h-auto p-3 text-left ${
+          {/* Conversations List */}
+          <ScrollArea className="flex-1">
+            {isLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="h-12 bg-gray-200 rounded-lg mb-2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : conversations.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm">No conversations yet</p>
+                <p className="text-xs text-gray-400">Start a new chat to begin</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {conversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className={`group relative rounded-lg ${
                       currentConversationId === conversation.id 
-                        ? 'text-blue-900' 
-                        : 'text-gray-900'
+                        ? 'bg-blue-100' 
+                        : 'bg-gray-50 hover:bg-gray-100'
                     }`}
-                    onClick={() => handleConversationClick(conversation.id)}
                   >
-                    <div className="flex flex-col w-full">
-                      <div className="flex items-center justify-between w-full">
-                        <span className="text-sm font-medium truncate flex-1 pr-8 max-w-[200px]">
-                          {conversation.title}
-                        </span>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start h-auto p-3 text-left ${
+                        currentConversationId === conversation.id 
+                          ? 'text-blue-900' 
+                          : 'text-gray-900'
+                      }`}
+                      onClick={() => handleConversationClick(conversation.id)}
+                    >
+                      <div className="flex flex-col w-full">
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-sm font-medium truncate flex-1 pr-8 max-w-[200px]">
+                            {conversation.title}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </Button>
-                  
-                  {/* Delete button - appears on hover */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
-                    onClick={(e) => handleDeleteConversation(conversation.id, e)}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
-      </CardContent>
-    </Card>
+                    </Button>
+                    
+                    {/* Delete button - appears on hover */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+                      onClick={(e) => handleDeleteConversation(conversation.id, e)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+      
+      {/* Custom Delete Confirmation Dialog */}
+      <ConfirmDialog />
+    </>
   );
 };
