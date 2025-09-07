@@ -16,6 +16,7 @@ const WORKSPACES_ID = process.env.NEXT_PUBLIC_APPWRITE_WORKSPACES_ID!;
 const COMMENTS_ID = process.env.NEXT_PUBLIC_APPWRITE_COMMENTS_ID!;
 const FILES_ID = process.env.NEXT_PUBLIC_APPWRITE_FILES_ID!;
 const FOLDERS_ID = process.env.NEXT_PUBLIC_APPWRITE_FOLDERS_ID!;
+const CANVAS_ROOMS_ID = process.env.NEXT_PUBLIC_APPWRITE_CANVAS_ROOMS_ID!;
 
 async function createDatabaseIndexes() {
     try {
@@ -30,7 +31,8 @@ async function createDatabaseIndexes() {
             WORKSPACES_ID,
             COMMENTS_ID,
             FILES_ID,
-            FOLDERS_ID
+            FOLDERS_ID,
+            CANVAS_ROOMS_ID,
         };
         
         const missingVars = Object.entries(requiredVars)
@@ -316,6 +318,51 @@ async function createDatabaseIndexes() {
             } catch (error: any) {
                 if (error.code === 404) {
                     console.log('⚠️  Folders collection not found, skipping...');
+                } else {
+                    throw error;
+                }
+            }
+        }
+
+        // 8. Canvas Rooms Collection Indexes (if collection exists)
+        if (CANVAS_ROOMS_ID) {
+            console.log('🎨 Creating Canvas Rooms collection indexes...');
+            try {
+                // Index for listing rooms by workspace and ordering by creation time
+                await databases.createIndex(
+                    DATABASE_ID,
+                    CANVAS_ROOMS_ID,
+                    ID.unique(),
+                    IndexType.Key,
+                    ['workspaceId', '$createdAt'],
+                    ['ASC', 'DESC']
+                );
+                console.log('✅ Created index: workspaceId + createdAt (canvas rooms)');
+
+                // Index for filtering by creator
+                await databases.createIndex(
+                    DATABASE_ID,
+                    CANVAS_ROOMS_ID,
+                    ID.unique(),
+                    IndexType.Key,
+                    ['createdBy'],
+                    ['ASC']
+                );
+                console.log('✅ Created index: createdBy (canvas rooms)');
+
+                // Fulltext index on name for search
+                await databases.createIndex(
+                    DATABASE_ID,
+                    CANVAS_ROOMS_ID,
+                    ID.unique(),
+                    IndexType.Fulltext,
+                    ['name'],
+                    ['ASC']
+                );
+                console.log('✅ Created fulltext index: name (canvas rooms)');
+            } catch (error: any) {
+                if (error.code === 404) {
+                    console.log('⚠️  Canvas Rooms collection not found, skipping...');
                 } else {
                     throw error;
                 }

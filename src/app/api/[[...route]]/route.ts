@@ -8,6 +8,7 @@ import projects from "@/features/projects/server/route";
 import tasks from "@/features/tasks/server/route";
 import analytics from "@/features/analytics/server/route";
 import comments from "@/features/comments/server/route";
+import canvas from "@/features/canvas/server/route";
 
 const app = new Hono().basePath("/api");
 
@@ -18,7 +19,8 @@ const router = app
   .route("/projects", projects)
   .route("/tasks", tasks)
   .route("/analytics", analytics)
-  .route("/comments", comments);
+  .route("/comments", comments)
+  .route("/canvas", canvas);
 
 
 export const GET = handle(app);

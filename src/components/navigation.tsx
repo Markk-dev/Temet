@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SettingsIcon, UsersIcon } from "lucide-react";
+import { SettingsIcon, UsersIcon, Palette } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,12 @@ const routes = [
         href: "/tasks",
         icon: GoCheckCircle,
         activeIcon: GoCheckCircleFill,
+    },
+    {
+        label: "Canvas",
+        href: "/canvas",
+        icon: Palette,
+        activeIcon: Palette,
     },
     {
         label: "Settings",
@@ -47,7 +53,10 @@ export const Navigation = () => {
             {routes.map((item) => {
                 const fullHref = `/workspaces/${workspaceId}${item.href}`;
                 
-                const isActive = pathname.replace(/\/$/, "") === fullHref.replace(/\/$/, "");
+                // Handle canvas sub-routes (e.g., /canvas/[roomId])
+                const isActive = item.href === "/canvas" 
+                    ? pathname.includes(`/workspaces/${workspaceId}/canvas`)
+                    : pathname.replace(/\/$/, "") === fullHref.replace(/\/$/, "");
                 const Icon = isActive ? item.activeIcon : item.icon;
 
                 return (

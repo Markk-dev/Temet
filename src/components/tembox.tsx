@@ -1,16 +1,25 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { HardDrive, Palette, BotMessageSquare } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useTemboxModal } from "@/features/tembox/hooks/use-tembox-modal";
 import { useTemboxLLMModal } from "@/features/tembox/hooks/use-tembox-llm-modal";
+import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspaceID";
 
 export const TemBox = () => {
     const pathname = usePathname();
+    const router = useRouter();
+    const workspaceId = useWorkspaceId();
     const { open } = useTemboxModal();
     const { open: openLLM } = useTemboxLLMModal();
+
+    const handleCanvasClick = () => {
+        if (workspaceId) {
+            router.push(`/workspaces/${workspaceId}/canvas`);
+        }
+    };
 
     return (
         <div className="flex flex-col gap-y-2">
@@ -33,15 +42,16 @@ export const TemBox = () => {
 
                     <div className="w-px bg-border" />
                     
-                    <div 
+                    <button 
+                        onClick={handleCanvasClick}
                         className={cn(
-                            "text-sm flex-1 rounded-none border-0 h-10 gap-2 font-medium bg-gradient-to-b from-blue-600 to-blue-700 text-primary-foreground hover:from-blue-700 hover:to-blue-700 transition-all flex items-center justify-center cursor-pointer",
-                            pathname.includes('/collaboration') && "from-blue-700 to-blue-800"
+                            "text-sm flex-1 rounded-none border-0 h-10 gap-2 font-medium bg-gradient-to-b from-blue-600 to-blue-700 text-primary-foreground hover:from-blue-700 hover:to-blue-700 transition-all flex items-center justify-center",
+                            pathname.includes('/canvas') && "from-blue-700 to-blue-800"
                         )}
                     >
                         <Palette className="w-4 h-4" />
                         Canvas
-                    </div>
+                    </button>
                 </div>
                 <div className="flex items-center justify-between">
                     <button 
