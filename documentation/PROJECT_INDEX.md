@@ -10,6 +10,13 @@
 - Role-based access control (ADMIN/MEMBER)
 - **WORKING REAL-TIME KANBAN BOARD** ✅
 
+### Documentation Links
+- [Comprehensive Codebase Index](./COMPREHENSIVE_CODEBASE_INDEX.md)
+- [Performance Optimization Guide](./PERFORMANCE_OPTIMIZATION.md)
+- [N+1 Prevention Guide](./N_PLUS_ONE_PREVENTION_GUIDE.md)
+- [Import Optimization Guide](./IMPORT_OPTIMIZATION_GUIDE.md)
+- [Performance Tasks Backlog](./TASKS_PERFORMANCE_OPTIMIZATION.md)
+
 ## Database Structure
 
 ### Database: `temet` (ID: 68484be90037edf3dcf5)
@@ -18,6 +25,19 @@
 - **Collections**: 7
 
 ---
+
+## Appwrite MCP Configuration
+
+This project uses an MCP server to introspect Appwrite resources for generating and refreshing indexes.
+
+- Config file: `.cursor/mcp.json`
+- Server: `mcp-server-appwrite` via `uvx`
+- Enabled scopes: users, databases, storage, functions, teams, messaging
+- Endpoint: `https://syd.cloud.appwrite.io/v1`
+- Project ID: `6875b3740011fa1a653e`
+- API Key: [redacted]
+
+Security note: Never commit raw API keys in documentation. Keys are provided to the MCP server via environment variables in `.cursor/mcp.json`. Rotate the key if it was exposed.
 
 ## Collections Index
 
