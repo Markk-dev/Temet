@@ -1,4 +1,4 @@
-import { fabric } from "fabric";
+import * as fabric from "fabric";
 import { v4 as uuid4 } from "uuid";
 
 import {
@@ -10,8 +10,8 @@ import {
   CanvasPathCreated,
   CanvasSelectionCreated,
   RenderCanvas,
-} from "@/types/type";
-import { defaultNavElement } from "@/constants";
+} from "@/types/type"; // Update this path if your types file is at src/lib/types/types.ts
+import { defaultNavElement } from "../../../constants";
 import { createSpecificShape } from "./shapes";
 
 // initialize fabric canvas

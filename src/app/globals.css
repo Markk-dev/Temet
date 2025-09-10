@@ -10,6 +10,9 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  .bg-sidebar {
+    background-color: var(--sidebar);
+  }
 }
 
 @layer base {

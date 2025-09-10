@@ -1,13 +1,17 @@
 import { useCallback, useRef, useMemo, useState, useEffect } from "react";
 import { useBroadcastEvent, useEventListener, useMyPresence, useOthers } from "@liveblocks/react/suspense";
-import { CursorMode, CursorState, Reaction, ReactionEvent } from "../../types/type";
+import { CursorMode, CursorState, Reaction, ReactionEvent } from "../types/type";
 import LiveCursors from "./cursor/live-cursors"
 import CursorChat from "./cursor/cursor-chat";
 import ReactionSelector from "./reaction/reactionBtn";
 import FlyingReaction from "./reaction/flyingReaction";
 import useInterval from "../../hooks/useInterval";
 
-const Live = () => {
+type Props = {
+    canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
+}
+
+const Live = ({canvasRef}: Props) => {
     const others = useOthers();
     const [{cursor}, updateMyPresence] = useMyPresence() as any;
 
@@ -15,14 +19,14 @@ const Live = () => {
         mode: CursorMode.Hidden
     })
 
-    // const lastUpdateRef = useRef<number>(0);
-    // const rafRef = useRef<number | null>(null);
-    // const pendingUpdateRef = useRef<{x: number, y: number} | null>(null);
-    // const throttleDelay = 8; // ~120fps for smoother tracking
-
     const [reaction, setReaction] = useState<Reaction[]>([])
-
     const broadcast = useBroadcastEvent();
+
+    useInterval(() => {
+       setReaction((reaction) => reaction.filter((reactionprop) =>
+        reactionprop.timestamp > Date.now() - 4000
+    ));
+    }, 1000);
 
     useInterval(() => {
         if(cursorState.mode === CursorMode.Reaction && cursorState.isPressed && cursor){
@@ -132,6 +136,7 @@ const Live = () => {
 
   return (
     <div
+    id="canvas"
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
       onPointerDown ={handlePointerDown}
@@ -142,8 +147,8 @@ const Live = () => {
         willChange: 'transform'
       }}
     >
-        <h1 className="text-2xl text-black">Canvas</h1>
-        
+        <canvas ref={canvasRef}/>
+
         {reaction.map((reactionprop) => (
             <FlyingReaction
                 key={reactionprop.timestamp.toString()}

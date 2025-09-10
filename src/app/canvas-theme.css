@@ -1,0 +1,52 @@
+.figma-theme {
+    --background: #FFFFFF;
+    --sidebar: #F5F5F5;
+    --muted: #F5F5F5;
+    --input: #FFFFFF;
+  
+    --foreground: #595959;
+    --sidebar-foreground: ;
+    --card-foreground: #595959;
+    --muted-foreground: #595959;
+    --primary-foreground: #FFFFFF;
+  
+    --primary: #3B82F6;
+    --secondary: #2563EB;
+    --accent: #3B82F6;
+    --sidebar-primary: #3B82F6;
+  
+    --border: #E5E5E5;
+    --sidebar-border: #E5E5E5;
+  
+    --ring: #3B82F680; /* 50% opacity */
+  }
+  
+  /* === Custom utility classes (like Tailwind) === */
+  .bg-canvas-sidebar {
+    background-color: #F5F5F5;
+  }
+  
+  .text-canvas-sidebar-foreground {
+    color:#595959;
+  }
+  
+  .border-canvas-sidebar {
+    border-color:  #E5E5E5;
+  }
+  
+  .bg-canvas-card {
+    background-color: var(--card);
+  }
+  
+  .text-canvas-primary {
+    color: #F5F5F5;
+  }
+  
+  .bg-canvas-primary {
+    background-color: var(--primary);
+  }
+  
+  .border-canvas-primary {
+    border-color: var(--primary);
+  }
+  

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import Cursor from './cursor'
-import { LiveCursorProps } from '../../../types/type'
+import { LiveCursorProps } from '../../types/type'
 import { COLORS } from '../../../constants'
 
 const LiveCursors = React.memo(({others}: LiveCursorProps) => {

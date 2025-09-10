@@ -1,5 +1,5 @@
 import React from 'react'
-import { CursorChatProps, CursorMode } from '../../../types/type'
+import { CursorChatProps, CursorMode } from '../../types/type'
 import CursorSVG from '../../../public/assets/CursorSVG'
 
 

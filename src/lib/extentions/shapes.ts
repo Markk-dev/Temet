@@ -1,4 +1,4 @@
-import { fabric } from "fabric";
+import * as fabric from "fabric";
 import { v4 as uuidv4 } from "uuid";
 
 import {
@@ -6,7 +6,10 @@ import {
   ElementDirection,
   ImageUpload,
   ModifyShape,
-} from "@/types/type";
+} from "@/types/type"; // Update this path if your types file is at src/lib/types/types.ts
+
+// Example: If your types file is actually at src/lib/types/types.ts, update the import to:
+ // } from "../types/types";
 
 export const createRectangle = (pointer: PointerEvent) => {
   const rect = new fabric.Rect({

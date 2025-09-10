@@ -43,6 +43,13 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'http',
+        hostname: 'liveblocks.io',
+        port: '',
+        pathname: '/**',
+      },
+      
     ],
     // Enable modern image formats
     formats: ['image/webp', 'image/avif'],
