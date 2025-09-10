@@ -21,19 +21,27 @@ export default function Page() {
     canvas.on("mouse:down", (options) => {
       handleCanvasMouseDown({
         options,
-        canvas, 
+        canvas,
         isDrawing,
         shapeRef,
         selectedShapeRef,
-      })
-    })
+      });
+    });
 
-      window.addEventListener("resize", () => {
-      handleResize({ canvas: fabricRef.current }); 
-      //handleResize({ fabricRef }); 
-    })
+    const handleResizeEvent = () => {
+      handleResize({ canvas: fabricRef.current });
+    };
 
-  }, []);
+    window.addEventListener("resize", handleResizeEvent);
+
+    return () => {
+      if (fabricRef.current) {
+        fabricRef.current.dispose();
+        fabricRef.current = null;
+      }
+      window.removeEventListener("resize", handleResizeEvent);
+    };
+  }, [canvasRef]);
 
 
   return (
